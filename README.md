@@ -12,7 +12,7 @@ A mature, opinionated [Claude Code](https://claude.ai/code) setup published as a
 | `commands/` | Slash commands (`/fix`, `/build`, `/ship`, `/write`, `/escalate-to`, `/plan`, etc.) | 18 |
 | `skills/` | Custom skills (auto-invoked via the Skill tool when their description matches the prompt) | 36 |
 | `rules/` | Coding / git / testing / security rules + CARL domain configs | 11 files |
-| `hooks/` | Shell scripts wired into the Claude Code lifecycle (PreToolUse, PostToolUse, Stop, SessionStart, etc.) | 22 |
+| `hooks/` | Shell scripts wired into the Claude Code lifecycle (PreToolUse, PostToolUse, Stop, SessionStart, etc.) | 21 |
 | `scripts/` | Runtime utilities (frontmatter validator, ship-phase-gate test harness, hook registrar) | 4 |
 | `docs/` | Architecture, ship-pipeline-v2 spec, skills/agents/commands catalogs, install guide | 8+ |
 | `CLAUDE.md` | Global instructions that auto-load every session | 1 |
