@@ -79,6 +79,8 @@ PASS  git push --force       -> blocked
 
 Test harness ships at `/tmp/test-block-dangerous.sh` (in commit `d2a6418`). The hook tightening came from a real session where the previous prefix-match version blocked legitimate `rm -rf /Users/.../skills/foo` deletes.
 
+**One workstation, 21,000+ tool invocations logged:** the `activity.jsonl` file on the author's laptop currently holds **21,000+ entries** across every Skill invocation, every subagent dispatch, every Bash call — captured by `observe-learning.sh` since the hook was wired. Telemetry isn't a slide; it's the substrate this config is built on.
+
 ---
 
 ## Why this exists
@@ -128,6 +130,36 @@ USER REQUEST
 ```
 
 Full architecture in [`docs/architecture.md`](docs/architecture.md). Ship pipeline detail in [`docs/ship-pipeline-v2.md`](docs/ship-pipeline-v2.md).
+
+
+### The `/ship` 11-stage pipeline (memory-aware)
+
+```mermaid
+flowchart TD
+    A([User: /ship feature]) --> S1
+    S1[Stage 1: Pre-flight<br/>memory-keeper loads<br/>tagged patterns] --> S2
+    S2[Stage 2: Brainstorm] --> S3
+    S3[Stage 3: Plan] --> S4
+    S4[Stage 4: Explore] --> S5
+    S5[Stage 5: Decision Lock] --> S6
+    S6[Stage 6: Build] --> S7
+    S7[Stage 7: Test] --> S8
+    S8[Stage 8: Review] --> S9
+    S9{{Stage 9: Deploy + Smoke<br/>HOOK-GATED<br/>3-deploy rule · observability · smoke}}
+    S9 -->|pass| S10
+    S9 -.->|block| S6
+    S10[Stage 10: Handoff] --> S11
+    S11[Stage 11: Capture<br/>memory-keeper drafts<br/>new feedback]
+    S11 --> Z([learned patterns<br/>auto-loaded next /ship])
+    Z -.-> S1
+
+    classDef gated fill:#fde68a,stroke:#92400e,stroke-width:2px,color:#000
+    classDef memory fill:#dbeafe,stroke:#1e40af,stroke-width:1px,color:#000
+    class S9 gated
+    class S1,S11,Z memory
+```
+
+The blue stages are owned by `memory-keeper` (Haiku). The amber Stage 9 is the only one a hook currently gates end-to-end — Phase B will gate Stages 5, 7, and 10. The dotted feedback loop is what makes this compound: every shipped feature deposits a learning the *next* feature pre-loads.
 
 ---
 
