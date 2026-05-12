@@ -1,0 +1,1614 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>How I made Claude Code remember things — Molly Shelestak</title>
+<meta name="description" content="A working write-up of the personal AI operating layer behind /ship — the agents, hooks, memory system, and the pipeline that finally stopped re-learning the same lessons.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..900,0..100,0..1&family=DM+Sans:opsz,wght@9..40,300..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+
+<style>
+:root {
+  --ink:        #0e0d0c;
+  --ink-2:      #181614;
+  --ink-3:      #232020;
+  --paper:      #f4ebe0;
+  --paper-dim:  #d9cfc1;
+  --paper-fade: #8a7f73;
+  --rule:       #2a2624;
+  --amber:      #f0a868;
+  --amber-hot:  #ff8c42;
+  --cyan:       #6cd0c8;
+  --crimson:    #d05858;
+  --grain-opacity: 0.035;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; scroll-padding-top: 2rem; }
+
+body {
+  background: var(--ink);
+  color: var(--paper);
+  font-family: 'DM Sans', -apple-system, sans-serif;
+  font-size: 17px;
+  line-height: 1.62;
+  font-weight: 350;
+  letter-spacing: -0.005em;
+  min-height: 100vh;
+  overflow-x: hidden;
+  font-feature-settings: 'ss01', 'ss02', 'cv11';
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0; pointer-events: none; z-index: 1;
+  background:
+    radial-gradient(ellipse 1100px 600px at 12% -10%, rgba(240, 168, 104, 0.10), transparent 60%),
+    radial-gradient(ellipse 900px 500px at 95% 12%, rgba(108, 208, 200, 0.06), transparent 65%),
+    radial-gradient(ellipse 800px 600px at 50% 100%, rgba(208, 88, 88, 0.05), transparent 70%);
+}
+
+body::after {
+  content: '';
+  position: fixed; inset: 0; pointer-events: none; z-index: 2;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' stitchTiles='stitch'/></filter><rect width='200' height='200' filter='url(%23n)' opacity='1'/></svg>");
+  mix-blend-mode: overlay;
+}
+
+a { color: var(--amber); text-decoration: none; transition: color .12s; border-bottom: 1px solid rgba(240,168,104,0.25); }
+a:hover { color: var(--amber-hot); border-bottom-color: var(--amber-hot); }
+a.bare { border-bottom: none; }
+
+code, pre, kbd { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.92em; }
+code { background: var(--ink-3); padding: 1px 7px; border-radius: 3px; color: var(--paper-dim); border: 1px solid var(--rule); overflow-wrap: anywhere; }
+
+pre {
+  background: var(--ink-2);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--amber);
+  padding: 1rem 1.25rem;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--paper-dim);
+}
+pre code { background: transparent; border: none; padding: 0; white-space: pre; }
+
+h1, h2, h3, h4 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+  color: var(--paper);
+  font-feature-settings: 'ss01', 'ss02';
+}
+
+p { margin-bottom: 1rem; }
+
+.shell {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 0;
+  position: relative;
+  z-index: 3;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+@media (max-width: 900px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .sidenav { display: none; }
+}
+
+/* sidenav */
+.sidenav {
+  position: sticky; top: 0; height: 100vh;
+  padding: 3.5rem 2rem 2rem 2.5rem;
+  overflow-y: auto;
+  border-right: 1px solid var(--rule);
+}
+
+.sidenav-brand {
+  display: block;
+  font-family: 'Fraunces', serif;
+  font-size: 1.15rem; font-weight: 500; font-style: italic;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.25rem;
+  color: var(--paper);
+  border: none;
+}
+.sidenav-brand:hover { color: var(--amber); }
+
+.sidenav-tagline {
+  font-size: 0.78rem; color: var(--paper-fade);
+  margin-bottom: 2.25rem;
+  font-style: italic; letter-spacing: 0.01em;
+}
+
+.sidenav ol { list-style: none; counter-reset: navcount; }
+.sidenav li { counter-increment: navcount; margin-bottom: 0.45rem; }
+
+.sidenav a.nav-link {
+  display: flex; align-items: baseline; gap: 0.7rem;
+  font-size: 0.86rem; color: var(--paper-dim); border: none;
+  padding: 0.15rem 0; letter-spacing: -0.005em;
+  transition: color .18s, transform .18s;
+}
+.sidenav a.nav-link::before {
+  content: counter(navcount, decimal-leading-zero);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem; color: var(--paper-fade);
+  letter-spacing: 0; font-weight: 500; flex-shrink: 0;
+}
+.sidenav a.nav-link:hover { color: var(--amber); transform: translateX(2px); }
+.sidenav a.nav-link:hover::before { color: var(--amber); }
+
+.sidenav-meta {
+  margin-top: 2.5rem; padding-top: 1.5rem;
+  border-top: 1px dashed var(--rule);
+  font-size: 0.74rem; color: var(--paper-fade); line-height: 1.5;
+}
+.sidenav-meta a {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  border-bottom: 1px dotted rgba(240,168,104,0.4);
+}
+
+main { padding: 3.5rem 4rem 6rem; }
+@media (max-width: 700px) { main { padding: 2.5rem 1.5rem 4rem; } }
+
+section { margin-bottom: 6rem; scroll-margin-top: 1.5rem; position: relative; }
+
+.section-header {
+  display: flex; align-items: baseline; gap: 1.25rem;
+  margin-bottom: 2rem; padding-bottom: 1rem;
+  border-bottom: 1px solid var(--rule);
+}
+.section-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem; font-weight: 500;
+  color: var(--amber); letter-spacing: 0.04em;
+  flex-shrink: 0; padding-top: 0.25rem;
+}
+.section-title {
+  font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+  flex-grow: 1;
+}
+.section-title em { font-style: italic; color: var(--paper-dim); font-weight: 300; }
+
+/* hero */
+.hero { padding: 6rem 0 4rem; position: relative; }
+.hero-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.74rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--amber); margin-bottom: 1.75rem;
+  display: flex; align-items: center; gap: 0.75rem;
+}
+.hero-eyebrow::before { content: ''; width: 2.5rem; height: 1px; background: var(--amber); }
+
+.hero h1 {
+  font-size: clamp(2.1rem, 7.5vw, 6rem); line-height: 0.94;
+  overflow-wrap: break-word; hyphens: auto;
+  margin-bottom: 2rem; font-weight: 300; letter-spacing: -0.04em;
+}
+.hero h1 .accent { font-style: italic; color: var(--amber); font-weight: 300; }
+
+.hero-lede {
+  font-family: 'Fraunces', serif; font-weight: 300;
+  font-size: clamp(1.2rem, 2.4vw, 1.6rem); line-height: 1.45;
+  color: var(--paper-dim); max-width: 38em; margin-bottom: 2.5rem;
+}
+
+.hero-byline {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+  color: var(--paper-fade); letter-spacing: 0.02em;
+  padding-top: 2rem; border-top: 1px dashed var(--rule);
+  max-width: 50rem;
+}
+.hero-byline strong { color: var(--paper); font-weight: 500; }
+
+/* content blocks */
+p, li, dd { color: var(--paper-dim); max-width: 38em; }
+
+main h3 {
+  font-size: 1.45rem;
+  margin: 2.75rem 0 0.85rem;
+  color: var(--paper);
+}
+
+main h4 {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600; font-size: 0.95rem;
+  letter-spacing: 0.02em; text-transform: uppercase;
+  color: var(--amber);
+  margin: 2rem 0 0.75rem;
+}
+
+main ul, main ol { padding-left: 1.4rem; margin-bottom: 1.25rem; max-width: 38em; }
+main li { margin-bottom: 0.55rem; padding-left: 0.25rem; }
+main li::marker { color: var(--paper-fade); }
+
+main strong { color: var(--paper); font-weight: 600; }
+main em { color: var(--paper); font-style: italic; }
+
+blockquote {
+  border-left: 3px solid var(--amber);
+  padding: 0.5rem 1.5rem;
+  margin: 1.5rem 0;
+  font-family: 'Fraunces', serif;
+  font-style: italic; font-weight: 300;
+  font-size: 1.18rem; color: var(--paper-dim);
+  line-height: 1.5;
+}
+
+blockquote cite {
+  display: block;
+  margin-top: 0.5rem;
+  font-family: 'DM Sans', sans-serif;
+  font-style: normal;
+  font-size: 0.82rem;
+  color: var(--paper-fade);
+  letter-spacing: 0.02em;
+}
+
+.callout {
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0;
+  background: rgba(24, 22, 20, 0.6);
+  font-size: 0.95rem;
+  position: relative;
+  max-width: 42em;
+}
+.callout::before {
+  content: 'Note';
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--amber);
+  position: absolute; top: -0.55rem; left: 1rem;
+  background: var(--ink); padding: 0 0.5rem;
+}
+.callout--warn { border-color: rgba(208,88,88,0.45); }
+.callout--warn::before { content: 'Risk'; color: var(--crimson); }
+.callout--quote { border-color: rgba(108,208,200,0.4); }
+.callout--quote::before { content: 'Receipt'; color: var(--cyan); }
+
+/* primer cards (hook vs skill vs ...) */
+.primer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  margin: 2rem 0;
+}
+.primer-card {
+  background: var(--ink-2);
+  padding: 1.5rem 1.5rem;
+  display: flex; flex-direction: column; gap: 0.6rem;
+}
+.primer-card h4 {
+  font-family: 'Fraunces', serif;
+  text-transform: none;
+  font-weight: 500;
+  font-size: 1.4rem;
+  margin: 0;
+  color: var(--paper);
+  letter-spacing: -0.02em;
+}
+.primer-card .primer-when {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--cyan);
+}
+.primer-card p { font-size: 0.92rem; margin: 0; max-width: none; }
+.primer-card .primer-egs {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--paper-fade);
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--rule);
+}
+
+/* example block */
+.example {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  margin: 1.75rem 0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+@media (max-width: 750px) { .example { grid-template-columns: minmax(0, 1fr); } }
+
+.example > div {
+  background: var(--ink-2);
+  padding: 1.5rem;
+}
+.example .ex-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--paper-fade); margin-bottom: 0.85rem;
+}
+.example .ex-label.input { color: var(--cyan); }
+.example .ex-label.output { color: var(--amber); }
+.example pre { margin: 0; border: none; padding: 0; background: transparent; font-size: 13.5px; }
+.example p { font-size: 0.92rem; margin: 0; max-width: none; }
+
+/* two-col */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; margin: 1.5rem 0; }
+@media (max-width: 750px) { .two-col { grid-template-columns: minmax(0, 1fr); gap: 1.25rem; } }
+
+/* tables */
+table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.92rem; display: block; overflow-x: auto; }
+table th {
+  text-align: left;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500; font-size: 0.72rem;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--amber);
+  padding: 0.85rem 1rem 0.85rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+table td {
+  padding: 0.85rem 1rem 0.85rem 0;
+  border-bottom: 1px solid var(--rule);
+  color: var(--paper-dim); vertical-align: top;
+}
+table tr:hover td { background: rgba(24, 22, 20, 0.5); color: var(--paper); }
+table td code { font-size: 0.85rem; }
+
+/* tag chips */
+.tag {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  padding: 2px 8px; border-radius: 99px;
+  border: 1px solid var(--rule);
+  color: var(--paper-fade);
+  margin-right: 0.3rem; margin-bottom: 0.3rem;
+  letter-spacing: 0.02em;
+}
+.tag--new { color: var(--amber); border-color: rgba(240,168,104,0.7); background: rgba(240,168,104,0.07); }
+
+/* mermaid */
+.diagram {
+  background: var(--ink-2);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 2rem; margin: 2rem 0;
+  overflow-x: auto;
+}
+.diagram-caption {
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.74rem;
+  color: var(--paper-fade);
+  letter-spacing: 0.04em;
+  margin-top: 0.75rem;
+}
+.mermaid { display: flex; justify-content: center; }
+.mermaid svg { max-width: 100%; }
+
+/* details/expandable */
+details {
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 0;
+  margin: 1.5rem 0;
+  background: rgba(24, 22, 20, 0.4);
+  max-width: 42em;
+}
+details summary {
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--cyan);
+  letter-spacing: 0.01em;
+  list-style: none;
+  position: relative;
+  user-select: none;
+}
+details summary::-webkit-details-marker { display: none; }
+details summary::after {
+  content: '⤳ click to expand';
+  position: absolute;
+  right: 1.25rem;
+  font-size: 0.7rem;
+  color: var(--paper-fade);
+  font-weight: 400;
+}
+details[open] summary::after { content: '⤴ click to collapse'; }
+details > *:not(summary) { padding: 0 1.25rem 1.25rem; }
+details > p, details > ul { padding-left: 1.25rem; padding-right: 1.25rem; }
+
+/* receipts (real artefacts shown in-line) */
+.receipts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+.receipt {
+  background: var(--ink-2);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--cyan);
+  padding: 1.25rem 1.5rem;
+  border-radius: 4px;
+}
+.receipt h5 {
+  font-family: 'Fraunces', serif;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--paper);
+  margin-bottom: 0.25rem;
+}
+.receipt .receipt-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--paper-fade);
+  margin-bottom: 0.75rem;
+}
+.receipt p { font-size: 0.88rem; margin: 0; max-width: none; }
+
+/* link list (references) */
+.link-list { list-style: none; padding: 0; max-width: none; }
+.link-list li {
+  padding: 0.65rem 0;
+  border-bottom: 1px dashed var(--rule);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  max-width: none;
+}
+.link-list li:last-child { border-bottom: none; }
+.link-list a {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.95rem;
+}
+.link-list .link-note {
+  font-size: 0.82rem;
+  color: var(--paper-fade);
+  font-style: italic;
+}
+
+/* footer */
+footer {
+  margin-top: 5rem;
+  padding: 3rem 4rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.85rem;
+  color: var(--paper-fade);
+  position: relative;
+  z-index: 3;
+}
+footer .footer-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  max-width: 1100px;
+}
+@media (max-width: 700px) { footer { padding: 2rem 1.5rem; } footer .footer-grid { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; } }
+footer h5 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--paper);
+  margin-bottom: 0.75rem;
+}
+footer ul { list-style: none; padding: 0; }
+footer li { margin-bottom: 0.4rem; max-width: none; }
+footer a { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }
+
+.signoff {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px dashed var(--rule);
+  font-style: italic;
+  font-family: 'Fraunces', serif;
+  color: var(--paper-fade);
+  font-size: 0.95rem;
+}
+
+/* hero load animation */
+.hero > * { opacity: 0; transform: translateY(12px); animation: rise .9s cubic-bezier(.22,1,.36,1) forwards; }
+.hero-eyebrow  { animation-delay: 0.05s; }
+.hero h1       { animation-delay: 0.18s; }
+.hero-lede     { animation-delay: 0.36s; }
+.hero-byline   { animation-delay: 0.52s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero > * { opacity: 1; transform: none; animation: none; }
+  html { scroll-behavior: auto; }
+}
+
+@keyframes rise { to { opacity: 1; transform: translateY(0); } }
+
+::selection { background: var(--amber); color: var(--ink); }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--ink); }
+::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--paper-fade); }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+<aside class="sidenav">
+  <a href="index.html" class="sidenav-brand">← claude-config</a>
+  <div class="sidenav-tagline">the full case study</div>
+
+  <ol>
+    <li><a class="nav-link" href="#story">The story</a></li>
+    <li><a class="nav-link" href="#primer">Hook vs skill vs agent</a></li>
+    <li><a class="nav-link" href="#example">Watch one /ship run</a></li>
+    <li><a class="nav-link" href="#shape">The whole shape</a></li>
+    <li><a class="nav-link" href="#memory">The memory layer</a></li>
+    <li><a class="nav-link" href="#agents">The 14 agents</a></li>
+    <li><a class="nav-link" href="#hooks">The 22 hooks</a></li>
+    <li><a class="nav-link" href="#origin">How I built it</a></li>
+    <li><a class="nav-link" href="#meta">Meta moment</a></li>
+    <li><a class="nav-link" href="#learnings">What I learned</a></li>
+    <li><a class="nav-link" href="#gaps">Gaps + roadmap</a></li>
+    <li><a class="nav-link" href="#refs">Reading list</a></li>
+  </ol>
+
+  <div class="sidenav-meta">
+    Snapshot taken<br>
+    <strong style="color:var(--paper-dim)">2026 · 05 · 10</strong><br><br>
+    Repo · <a href="https://github.com/<your-github-username>/claude-config">private/main</a><br>
+    Latest commit · <span style="color:var(--paper-dim)">65eb577</span>
+  </div>
+</aside>
+
+<main id="top">
+
+<!-- ─── HERO ────────────────────────────────────── -->
+
+<section class="hero">
+  <div class="hero-eyebrow">A field write-up · May 2026</div>
+  <h1>I taught Claude Code<br>to <span class="accent">remember things.</span></h1>
+  <p class="hero-lede">
+    For two months I'd been watching the same correctable mistakes recur
+    across sessions — silent commits, narrowed scope, blind 4th deploys.
+    The fix wasn't more agents. It was making the ones I had aware of
+    the institutional memory they live alongside. Here's what I built,
+    why, and what broke.
+  </p>
+  <p class="hero-byline">
+    By <strong>Molly Shelestak</strong> · senior PM, multi-brand operator, build partner ·
+    written for <strong>other senior tech builders</strong> wondering whether
+    their own Claude Code setup could be doing more.
+  </p>
+</section>
+
+<!-- ─── THE STORY ───────────────────────────────── -->
+
+<section id="story">
+  <div class="section-header">
+    <div class="section-num">§ 01</div>
+    <h2 class="section-title">The story <em>— how I got here</em></h2>
+  </div>
+
+  <p>
+    I'd accumulated 78 memory files. 12 distilled <em>learned</em> patterns.
+    13 specialist agents. 21 hooks. A CARL rule system. Three brands of
+    voice routing. None of it was wired together.
+  </p>
+
+  <p>
+    A typical session would start fresh. I'd ask Claude to ship a feature.
+    Claude would hit the same Railway deploy trap I'd documented twice
+    before. Or commit content with my Instagram handle wrong. Or quietly
+    swallow a Postgres error and report success. The fix had been written
+    down — in a feedback memory, in a learned pattern, in a project
+    reference doc. Claude just... never read it.
+  </p>
+
+  <p>
+    The moment I noticed the recursion was when I caught myself, again,
+    explaining why the Raw Editor in Railway leaks every secret value as
+    plaintext DOM. I'd written that lesson three weeks earlier. It was
+    sitting in my memory directory under <a href="https://github.com/<your-github-username>/claude-config/blob/main/skills/learned/secrets-routing.md"><code>secrets-routing</code></a>.
+    The agent I dispatched to set up the env vars had no idea it existed.
+  </p>
+
+  <blockquote>
+    Memory exists. Claude just doesn't read it. The agents work in
+    parallel, in their own context windows, and the archive of
+    everything I'd learned was sitting one filesystem away.
+    <cite>— what I told myself the morning I started this build</cite>
+  </blockquote>
+
+  <h4>The four leaks I named</h4>
+
+  <p>
+    When I sat down to design the fix, I forced myself to make the
+    failure modes concrete. Naming them is half the work — abstract
+    "Claude doesn't remember" gives no traction. Specific leaks do:
+  </p>
+
+  <ol>
+    <li><strong>Agents skip the patterns mid-flight.</strong> I'd written distilled lessons to <code>~/.claude/skills/learned/</code>. Agents had no instruction to read them.</li>
+    <li><strong>Project memory never gets read at start.</strong> Project-specific gotchas (Railway TTY traps, Supabase MCP scope quirks) lived in <code>project_*.md</code> files. Sessions skipped them.</li>
+    <li><strong>New learnings don't land at the end.</strong> Surprises in a ship session evaporated unless I stopped to write them up — which I rarely did mid-deploy.</li>
+    <li><strong>The pipeline is a list, not a process.</strong> <code>/ship</code> was twelve lines of "dispatch this agent, then that agent." No pre-flight check. No verification that patterns actually got applied. No DoD walk against the spec.</li>
+  </ol>
+
+  <p>
+    The new <code>/ship</code> closes all four. Pre-flight loads memory.
+    Patterns inject into every agent prompt. A hook gates the deploy
+    stage. A capture step at the end harvests new lessons.
+  </p>
+</section>
+
+<!-- ─── PRIMER ──────────────────────────────────── -->
+
+<section id="primer">
+  <div class="section-header">
+    <div class="section-num">§ 02</div>
+    <h2 class="section-title">Hook vs skill vs agent vs command</h2>
+  </div>
+
+  <p>
+    Before going further: four words I use a lot. They're easy to
+    confuse and the difference matters. If you've already wired up a
+    Claude Code setup, skim. Otherwise, this is the orientation:
+  </p>
+
+  <div class="primer">
+
+    <div class="primer-card">
+      <div class="primer-when">User-typed</div>
+      <h4>Command</h4>
+      <p>Slash commands like <code>/ship</code> or <code>/build</code>. The user types them in chat. Each one is a markdown file whose body becomes the prompt. They're <strong>orchestration entry points</strong> — they pick which agents run, in what order, against which spec.</p>
+      <div class="primer-egs">/fix · /build · /ship · /write</div>
+    </div>
+
+    <div class="primer-card">
+      <div class="primer-when">Auto-loaded by description match</div>
+      <h4>Skill</h4>
+      <p>A <em>method</em>. A markdown file that says "here's how to do X." Claude auto-invokes a skill when the user's request matches its description. Skills load into the current context — they don't run separately.</p>
+      <div class="primer-egs">brainstorming · writing-plans · frontend-design</div>
+    </div>
+
+    <div class="primer-card">
+      <div class="primer-when">Explicit · own context</div>
+      <h4>Agent</h4>
+      <p>A <em>role</em>. Has its own context window, its own model (Haiku, Sonnet, or Opus), its own tool palette. The orchestrator dispatches an agent for work that has its own quality bar — UI design, security audit, content QA. Returns a focused output back.</p>
+      <div class="primer-egs">engineer · designer · reviewer · memory-keeper</div>
+    </div>
+
+    <div class="primer-card">
+      <div class="primer-when">Lifecycle event</div>
+      <h4>Hook</h4>
+      <p>A shell script wired to a Claude Code event (PreToolUse, PostToolUse, Stop). Runs <em>outside</em> the model — deterministic, fast, can block tool calls. This is where you put rules that must always fire, like "block dangerous commands" or "format on save."</p>
+      <div class="primer-egs">block-dangerous · prettier-format · ship-phase-gate</div>
+    </div>
+
+  </div>
+
+  <p>
+    <strong>The mental model:</strong> commands route, skills explain
+    how, agents do the work, hooks enforce the rules. The trick is
+    knowing which of the four to reach for. New users put everything
+    in skills; that gets messy fast. Putting deterministic rules in
+    skills is the most common mistake — they belong in hooks.
+  </p>
+
+  <div class="callout callout--quote">
+    <p style="margin:0;">
+      The whole system has 14 agents, 22 hooks, 40+ skills, and 20
+      slash commands. Each picked deliberately. Most of the design work
+      is just figuring out <em>which surface this belongs on.</em>
+    </p>
+  </div>
+</section>
+
+<!-- ─── EXAMPLE ─────────────────────────────────── -->
+
+<section id="example">
+  <div class="section-header">
+    <div class="section-num">§ 03</div>
+    <h2 class="section-title">Watch one <code>/ship</code> run</em></h2>
+  </div>
+
+  <p>
+    Easier to show than describe. Here's what happens when I type
+    <code>/ship deploy nancy phase 12 webhook to railway</code> — a real
+    deploy-shaped ask in one of my live projects.
+  </p>
+
+  <h4>Step 1 · Pre-flight (a Haiku agent reads memory)</h4>
+
+  <div class="example">
+    <div>
+      <div class="ex-label input">Input</div>
+      <pre>/ship deploy nancy phase 12 webhook to railway</pre>
+      <p style="margin-top:0.85rem;">The orchestrator dispatches a small agent called <code>memory-keeper</code> first thing. It detects the project (<code>nancy</code>) from cwd and parses the description for tags.</p>
+    </div>
+    <div>
+      <div class="ex-label output">Output</div>
+      <pre>Inferred tags: [deploy, infra]
+Project: nancy
+
+Loading 12 patterns into .ship/2026-05-10-nancy-phase-12/patterns.md:
+  · 4 always-load (blocking)
+  · 2 project-load (nancy-specific)
+  · 6 tag-matched (deploy + infra)
+
+Confirm tags? [y/n/edit]</pre>
+    </div>
+  </div>
+
+  <p>
+    What happened: <code>memory-keeper</code> globbed every memory file
+    and learned pattern, parsed their YAML frontmatter, and filtered to
+    the dozen most relevant for <em>this</em> ship. Twelve files, not
+    seventy-eight. Now every downstream agent reads <code>patterns.md</code>
+    before doing anything.
+  </p>
+
+  <h4>Step 2 · The agents work, with patterns injected</h4>
+
+  <p>
+    Stages 2-8 are the existing <code>/ship</code> flow — product-lead
+    writes a brief, engineer explores, reviewer + security pass — but
+    every Agent dispatch now carries a prompt prefix:
+  </p>
+
+<pre><code>Apply patterns from .ship/&lt;run&gt;/patterns.md.
+Read the file before acting. If a pattern conflicts
+with the task, raise NEEDS_CONTEXT — don't silently
+override.</code></pre>
+
+  <h4>Step 3 · The hook gate fires at deploy</h4>
+
+  <p>
+    Stage 9 is where the real enforcement lives. After every Bash and
+    Agent call inside the ship's directory, a shell hook
+    (<code>ship-phase-gate.sh</code>) checks <code>deploy-log.md</code>
+    for three things:
+  </p>
+
+  <div class="example">
+    <div>
+      <div class="ex-label input">deploy-log.md after 3 deploys, no pivot section</div>
+<pre>## Deploy attempt 1
+result: fail — uvicorn boot loop
+
+## Deploy attempt 2
+result: fail — webhook 502
+
+## Deploy attempt 3
+result: fail — same 502</pre>
+    </div>
+    <div>
+      <div class="ex-label output">Hook output (blocks next agent dispatch)</div>
+<pre>{
+  "decision": "block",
+  "reason": "3-deploy rule triggered:
+    3+ deploys without convergence.
+    Add a `## Pivot decision` section
+    to deploy-log.md before next deploy.
+    See learned/deploy-iteration-discipline.md."
+}</pre>
+    </div>
+  </div>
+
+  <p>
+    The lesson behind that block came from a real Railway debugging
+    session in early May. I shipped seven commits in two hours trying
+    to fix an opaque webhook problem; the last three produced no new
+    information because the framework's log panel was frozen. Pushing
+    felt like progress. It wasn't. I wrote up the rule. Now the hook
+    enforces it on me.
+  </p>
+
+  <h4>Step 4 · Capture (Haiku reads the transcript)</h4>
+
+  <p>
+    At the end of the run, <code>memory-keeper</code> comes back. It
+    scans the session transcript for correction signals — moments where
+    I said "no," "stop," "actually," or re-prompted after an agent
+    output — and drafts candidate feedback files. It asks me three
+    questions:
+  </p>
+
+  <ol>
+    <li>"I noticed you corrected me on X. Save this draft as <code>feedback_&lt;slug&gt;.md</code>?" (per draft, y/n/edit)</li>
+    <li>"What surprised you in this ship that I didn't catch?" (free text or skip)</li>
+    <li>"Anything from this session that should become a learned pattern, not just a feedback file?" (y/n + which)</li>
+  </ol>
+
+  <p>
+    Approved drafts move from <code>.ship/&lt;run&gt;/draft-feedback/</code>
+    into <code>~/.claude/projects/.../memory/</code>. The MEMORY.md
+    index gets updated. If a theme has crystallised across multiple
+    feedback files, the synthesis hook flags it next session for
+    promotion to a <code>learned/</code> pattern.
+  </p>
+
+  <p>
+    That's one full ship. The previous version of this command did the
+    middle (the agents) without the bookends. The bookends are the
+    point.
+  </p>
+</section>
+
+<!-- ─── THE WHOLE SHAPE ─────────────────────────── -->
+
+<section id="shape">
+  <div class="section-header">
+    <div class="section-num">§ 04</div>
+    <h2 class="section-title">The whole shape</h2>
+  </div>
+
+  <p>
+    Five surfaces compose into one system. Each does a different job at
+    a different cost. Confusing them is the most common avoidable
+    mistake.
+  </p>
+
+  <div class="diagram">
+    <pre class="mermaid">
+graph TB
+  classDef user fill:#0e0d0c,stroke:#f0a868,stroke-width:1.5px,color:#f4ebe0
+  classDef cmd fill:#181614,stroke:#6cd0c8,color:#f4ebe0
+  classDef agent fill:#181614,stroke:#f0a868,color:#f4ebe0
+  classDef skill fill:#181614,stroke:#8a7f73,color:#f4ebe0
+  classDef hook fill:#181614,stroke:#d05858,color:#f4ebe0
+  classDef store fill:#232020,stroke:#8a7f73,color:#f4ebe0,stroke-dasharray: 3 3
+
+  U[Molly types in chat]:::user
+  C{{Slash command<br>routes to a pipeline}}:::cmd
+  A[14 specialist agents<br>own contexts · own models]:::agent
+  S[40+ skills<br>auto-invoked methods]:::skill
+  H1[22 hooks<br>fire on lifecycle events]:::hook
+
+  M[(78 memory files<br>v2 frontmatter-tagged)]:::store
+  L[(12 learned patterns<br>distilled from feedback)]:::store
+  R[(CARL rules<br>keyword-loaded)]:::store
+
+  U --> C
+  C --> A
+  A --> S
+  A <-.reads.-> M
+  A <-.reads.-> L
+  A <-.reads.-> R
+  H1 -.gates.-> A
+  A --> U
+    </pre>
+  </div>
+  <div class="diagram-caption">A prompt threads through the surfaces. Hooks gate; agents read; memory persists.</div>
+
+  <h3>The eleven stages of <code>/ship</code></h3>
+
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart LR
+  classDef new fill:#181614,stroke:#f0a868,color:#f4ebe0,stroke-width:2px
+  classDef gated fill:#181614,stroke:#d05858,color:#f4ebe0,stroke-width:2px
+  classDef normal fill:#181614,stroke:#8a7f73,color:#f4ebe0
+
+  S1[1 · Pre-flight<br>memory-keeper]:::new
+  S23[2-3 · Brief]:::normal
+  S4[4 · Explore]:::normal
+  S5[5 · Lock]:::normal
+  S6[6 · Build]:::normal
+  S7[7 · Test]:::normal
+  S8[8 · Review]:::normal
+  S9[9 · Deploy + Smoke<br>hook-gated]:::gated
+  S10[10 · Handoff]:::normal
+  S11[11 · Capture<br>memory-keeper]:::new
+
+  S1 --> S23 --> S4 --> S5 --> S6 --> S7 --> S8 --> S9 --> S10 --> S11
+    </pre>
+  </div>
+  <div class="diagram-caption">v1 vertical slice: Stages 1, 9, 11 newly enforced; 2-8 + 10 are inline reminders for now.</div>
+
+  <details>
+    <summary>The full stage-by-stage detail</summary>
+
+    <table>
+      <thead><tr><th>Stage</th><th>Owner</th><th>What happens</th></tr></thead>
+      <tbody>
+        <tr><td>01 · Pre-flight <span class="tag tag--new">new</span></td><td><code>memory-keeper</code></td><td>Detect project · infer tags · glob memory + learned · write <code>patterns.md</code>.</td></tr>
+        <tr><td>02 · Brainstorm</td><td><code>product-lead</code></td><td>Skippable when feature is well-defined. Brainstorming skill when the problem space is open.</td></tr>
+        <tr><td>03 · Define</td><td><code>product-lead</code> + MoA</td><td>Eight-section brief. devils-advocate runs on Risks.</td></tr>
+        <tr><td>04 · Explore</td><td><code>engineer</code> + researchers</td><td>Independent solution research. <code>market-researcher</code> if external claims.</td></tr>
+        <tr><td>05 · Decision Lock</td><td>(gate)</td><td>Brief + exploration approved. ADR written if architectural.</td></tr>
+        <tr><td>06 · Build</td><td><code>engineer</code> + <code>debugger</code> on-call</td><td>Subagent-driven dev. <code>debugger</code> auto-invoked when stalled.</td></tr>
+        <tr><td>07 · Test</td><td><code>engineer</code> + tdd-guide</td><td>Behavioural spec exists. RED → GREEN. Tests in same commit.</td></tr>
+        <tr><td>08 · Review</td><td><code>reviewer</code> + <code>security</code> + <code>content-qa</code></td><td>Tier 2 default; Tier 3 for high-risk.</td></tr>
+        <tr><td>09 · Deploy + Smoke <span class="tag tag--new">gated</span></td><td><code>engineer</code> + e2e plugin</td><td>3-deploy rule, observability check, smoke. Hook-enforced.</td></tr>
+        <tr><td>10 · Handoff</td><td><code>project-manager</code></td><td>HANDOFF.md, TASKS.md, CLAUDE.md updates per the DoD doc-mapping table.</td></tr>
+        <tr><td>11 · Capture <span class="tag tag--new">new</span></td><td><code>memory-keeper</code></td><td>Scan transcript · draft feedback · ask Q1/Q2/Q3 · move approved to memory/.</td></tr>
+      </tbody>
+    </table>
+  </details>
+</section>
+
+<!-- ─── MEMORY ──────────────────────────────────── -->
+
+<section id="memory">
+  <div class="section-header">
+    <div class="section-num">§ 05</div>
+    <h2 class="section-title">The memory layer</em></h2>
+  </div>
+
+  <p>
+    78 files at last count. Lessons I've learned, project-specific
+    gotchas, references to external systems, my own working profile.
+    Each one with YAML frontmatter that <code>/ship</code> uses to
+    decide what to load.
+  </p>
+
+  <h4>What a memory file looks like</h4>
+
+  <div class="example">
+    <div>
+      <div class="ex-label input">~/.claude/projects/.../memory/feedback_railway_raw_editor_leaks_secrets.md</div>
+<pre>---
+name: railway-raw-editor-leaks
+description: The Raw Editor exposes
+  every existing env value as plaintext
+  DOM. Use the New Variable UI for adds.
+type: feedback
+applies-to: [secrets, deploy]
+projects: [all]
+severity: warning
+phase: [deploy, build]
+last-validated: 2026-05-10
+---
+
+When adding a single env var to a Railway
+service, click "+ New Variable" — never
+the Raw Editor. The Raw Editor renders
+all existing values plaintext into the
+DOM, leaking them into your conversation
+context if Playwright or screen-share is
+active.
+
+**Why:** Caught during a <your-agent-project> deploy
+when I screen-shared with another agent
+and three secrets ended up in chat...</pre>
+    </div>
+    <div>
+      <div class="ex-label output">How memory-keeper uses this file</div>
+      <p style="margin-bottom:0.85rem;">
+        On a <code>/ship</code> with <code>secrets</code> or <code>deploy</code> in the inferred tags, this file gets pulled into <code>patterns.md</code>. Every agent dispatched in that ship reads the rule before acting.
+      </p>
+      <p style="margin-bottom:0.85rem;">
+        If the agent goes to add an env var, it now knows to use the New Variable UI. The lesson doesn't have to be re-explained.
+      </p>
+      <p>
+        On the next <code>/ship</code> for a content task (no secrets/deploy tags), this file is skipped — saving context budget for what matters.
+      </p>
+    </div>
+  </div>
+
+  <h4>The twelve tags</h4>
+
+  <p>
+    Every file gets tagged with one or more of these. The tags are
+    the join key between feature descriptions and patterns.
+  </p>
+
+  <p>
+    <span class="tag">deploy</span><span class="tag">infra</span><span class="tag">build</span><span class="tag">auth</span><span class="tag">content</span><span class="tag">delegation</span><span class="tag">verification</span><span class="tag">process</span><span class="tag">observability</span><span class="tag">secrets</span><span class="tag">scope</span><span class="tag">memory</span>
+  </p>
+
+  <details>
+    <summary>How the selection logic actually works</summary>
+    <p style="padding-top:1rem;">
+      Three rules, evaluated independently per file:
+    </p>
+    <ol>
+      <li><strong>Always-load</strong> if <code>severity: blocking</code> AND <code>projects: [all]</code>. These are the universal rules — the four core patterns about not skipping steps, verifying agent output, using existing skills, and not fabricating numbers.</li>
+      <li><strong>Project-load</strong> if <code>projects</code> contains the active project. <code>nancy</code> ships pull the <your-personal-ai-project> gotchas; <code><your-project-1></code> ships skip them.</li>
+      <li><strong>Tag-load</strong> if <code>applies-to</code> intersects the inferred feature tags. A "deploy" feature pulls everything tagged <code>deploy</code>. A "content" feature doesn't.</li>
+    </ol>
+    <p>The union of the three becomes <code>patterns.md</code>. Typical run loads 8-15 files. Selection happens on Haiku, so it's cheap.</p>
+  </details>
+
+  <h4>Why frontmatter and not embeddings</h4>
+
+  <p>
+    A semantic search via embeddings would be more flexible. Tags give
+    me <em>debuggability</em> — if a pattern didn't fire when it should
+    have, I can trace the path. Was the file tagged correctly? Were the
+    inferred feature tags right? Did severity trigger always-load?
+    Embeddings hide the audit trail.
+  </p>
+</section>
+
+<!-- ─── AGENTS ──────────────────────────────────── -->
+
+<section id="agents">
+  <div class="section-header">
+    <div class="section-num">§ 06</div>
+    <h2 class="section-title">The 14 agents <em>— who does what</em></h2>
+  </div>
+
+  <p>
+    Each agent runs in its own context window with its own model and a
+    restricted tool palette. Picking the right model per agent is most
+    of the cost optimization.
+  </p>
+
+  <table>
+    <thead><tr><th>Agent</th><th>Model</th><th>Job</th></tr></thead>
+    <tbody>
+      <tr><td><code>product-lead</code></td><td>Opus</td><td>Feature planning, problem definition, brief writing.</td></tr>
+      <tr><td><code>engineer</code></td><td>Sonnet</td><td>Implementation. Tests ship in the same commit.</td></tr>
+      <tr><td><code>designer</code></td><td>Sonnet</td><td>UI components and visual QA via Playwright.</td></tr>
+      <tr><td><code>reviewer</code></td><td>Sonnet</td><td>Pre-merge review. Read-only.</td></tr>
+      <tr><td><code>tech-researcher</code></td><td>Sonnet</td><td>Library docs, integration patterns.</td></tr>
+      <tr><td><code>debugger</code></td><td>Opus</td><td>Gnarly bugs. Reproduces, isolates, root-causes.</td></tr>
+      <tr><td><code>security</code></td><td>Opus</td><td>Vuln scans, secret leaks, auth bypass. Read-only.</td></tr>
+      <tr><td><code>project-manager</code></td><td>Haiku</td><td>TASKS.md, HANDOFF.md, summaries.</td></tr>
+      <tr><td><code>memory-keeper</code> <span class="tag tag--new">new</span></td><td>Haiku</td><td><code>/ship</code> Stage 1 pre-flight + Stage 11 capture.</td></tr>
+      <tr><td><code>content-social</code></td><td>Sonnet</td><td>Instagram, LinkedIn, TikTok, Reels. Routes through brand voice + content-qa.</td></tr>
+      <tr><td><code>content-longform</code></td><td>Sonnet</td><td>Books, ebooks, blogs, brand PDFs.</td></tr>
+      <tr><td><code>content-business</code></td><td>Sonnet</td><td>Proposals, decks, sales emails — drafts only.</td></tr>
+      <tr><td><code>content-qa</code></td><td>Haiku</td><td>23-item read-only checklist. Auto-spawned by content writers.</td></tr>
+      <tr><td><code>market-researcher</code></td><td>Sonnet</td><td>External claim verification, competitive intel.</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    The split: Haiku for checklists and tracking, Sonnet for the bulk
+    of work, Opus for the calls that need reasoning depth (architecture
+    decisions, gnarly bugs, security audits). It's a cost dial more
+    than a capability dial.
+  </p>
+</section>
+
+<!-- ─── HOOKS ───────────────────────────────────── -->
+
+<section id="hooks">
+  <div class="section-header">
+    <div class="section-num">§ 07</div>
+    <h2 class="section-title">The 22 hooks <em>— deterministic enforcement</em></h2>
+  </div>
+
+  <p>
+    Hooks are bash scripts wired to Claude Code lifecycle events. They
+    don't go through the model — they execute, read JSON from stdin,
+    write JSON to stdout. They're how I make rules that <em>must</em>
+    fire, regardless of whether the agent remembered to.
+  </p>
+
+  <h4>What a hook actually looks like</h4>
+
+  <div class="example">
+    <div>
+      <div class="ex-label input">~/.claude/hooks/ship-phase-gate.sh (excerpt)</div>
+<pre>SHIP_DIR=""
+DIR="$PWD"
+for _ in 1 2 3 4 5; do
+  if [ -d "$DIR/.ship" ]; then
+    SHIP_DIR="$DIR/.ship"; break
+  fi
+  PARENT=$(dirname "$DIR")
+  [ "$PARENT" = "$DIR" ] && break
+  DIR="$PARENT"
+done
+[ -z "$SHIP_DIR" ] && exit 0
+
+DEPLOY_LOG="$RUN_DIR/deploy-log.md"
+DEPLOY_COUNT=$(grep -c "^## Deploy attempt" \
+  "$DEPLOY_LOG" 2>/dev/null || true)
+
+if [ "${DEPLOY_COUNT:-0}" -ge 3 ]; then
+  if ! grep -q "^## Pivot decision" \
+       "$DEPLOY_LOG"; then
+    echo '{"decision":"block",...}'
+    exit 0
+  fi
+fi</pre>
+    </div>
+    <div>
+      <div class="ex-label output">What this enforces</div>
+      <p style="margin-bottom:0.85rem;">
+        Walks up from cwd looking for a <code>.ship</code> directory (max 4 levels). If not found, silent exit — every other tool call works normally.
+      </p>
+      <p style="margin-bottom:0.85rem;">
+        If found, reads <code>deploy-log.md</code>. Counts deploy attempts. If three or more without a Pivot decision section, blocks the next agent dispatch with a JSON refusal.
+      </p>
+      <p>
+        Result: I literally cannot deploy a fourth time without naming what I'm pivoting away from. The discipline is mechanical, not aspirational.
+      </p>
+    </div>
+  </div>
+
+  <p>
+    The full hook catalog runs across PreToolUse (block-dangerous,
+    agent-batch-validator), PostToolUse (prettier-format,
+    content-qa-guarded, ship-phase-gate), Stop (session-retrospective
+    enforces my Definition of Done), SessionStart (carl-loader,
+    synthesize-learnings), and a few specialty events. Twenty-two
+    total.
+  </p>
+
+  <details>
+    <summary>The full hook list, by category</summary>
+    <h4 style="margin-top:1rem;">Validation + blocking (9 hooks)</h4>
+    <p>agent-batch-validator · block-dangerous · block-issue-close-without-tests · caption-guard · caption-pipeline-guard · content-qa-guarded · pre-commit-checks · validate-n8n-workflow · workflow-gate · ship-phase-gate <span class="tag tag--new">new</span></p>
+    <h4>Context loading (3 hooks)</h4>
+    <p>carl-loader · check-model-freshness · synthesize-learnings</p>
+    <h4>Auto-actions (3 hooks)</h4>
+    <p>auto-approve · auto-push-after-commit · prettier-format</p>
+    <h4>Session management (5 hooks)</h4>
+    <p>session-retrospective · session-end-save · session-restore · pre-compact-save · observe-learning</p>
+    <h4>Status (1 hook)</h4>
+    <p>gsd-statusline (custom status line)</p>
+  </details>
+</section>
+
+<!-- ─── ORIGIN ──────────────────────────────────── -->
+
+<section id="origin">
+  <div class="section-header">
+    <div class="section-num">§ 08</div>
+    <h2 class="section-title">How I built it <em>— a build log</em></h2>
+  </div>
+
+  <p>
+    The build itself followed the workflow it eventually encoded.
+    Brainstorm before brief; brief before plan; plan before code; code
+    under two-stage review; capture at the end. The recursion was on
+    purpose.
+  </p>
+
+  <div class="two-col">
+    <div>
+      <h4>1 · Brainstorm</h4>
+      <p>
+        Started by surveying what was already there: 78 memory files,
+        12 distilled patterns. The brainstorming skill (from the
+        Superpowers plugin) keeps you from jumping to implementation
+        too fast. It asked four clarifying questions — what's broken,
+        how heavy a fix, where do new learnings go, how to pick which
+        memories to load. I picked all four pain points. Full overhaul
+        of <code>/ship</code>.
+      </p>
+    </div>
+    <div>
+      <h4>2 · Spec</h4>
+      <p>
+        Wrote a design document at
+        <code>docs/superpowers/specs/2026-05-10-ship-pipeline-v2-design.md</code>.
+        Eleven stages, three new. Kill criterion baked in: after three
+        real <code>/ship</code> runs through Stage 9, simplify back to
+        bolt-on if the patterns aren't paying off. Naming when to give
+        up is itself a discipline.
+      </p>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <h4>3 · Plan</h4>
+      <p>
+        22 tasks across 7 phases. Each one with explicit file paths,
+        exact code, exact bash commands, expected outputs. The plan
+        document is what an engineer (or a fresh subagent) would need
+        to implement without further context.
+      </p>
+    </div>
+    <div>
+      <h4>4 · Subagent build</h4>
+      <p>
+        One implementer + one spec reviewer + one code-quality reviewer
+        per task. Eight critical bugs caught across two tiny scripts —
+        all on the code-quality pass after spec compliance was already
+        green. <em>That</em> learning got captured: run both reviewers,
+        even on small files.
+      </p>
+    </div>
+  </div>
+
+  <h4>The bugs the code-quality reviewer caught</h4>
+
+  <table>
+    <thead><tr><th>File</th><th>Bug</th><th>Why it mattered</th></tr></thead>
+    <tbody>
+      <tr><td><code>validate-frontmatter.sh</code></td><td>Silent pass on unclosed frontmatter</td><td>A file with one <code>---</code> and no closing fence reported "missing key" instead of "unclosed." Misleading errors during the 18-file retrofit.</td></tr>
+      <tr><td><code>validate-frontmatter.sh</code></td><td>Inline-comment mangling</td><td><code>type: feedback # comment</code> tripped <code>tr -d ' '</code>, producing garbage. False negative on valid YAML.</td></tr>
+      <tr><td><code>validate-frontmatter.sh</code></td><td>CRLF + fence whitespace intolerance</td><td>Files saved on Windows or with trailing spaces broke. Realistic for multi-author files.</td></tr>
+      <tr><td><code>ship-phase-gate.sh</code></td><td><code>grep -c</code> + <code>|| echo 0</code> stderr leak</td><td>Empty deploy-log produced <code>"0\n0"</code> → integer compare crash → noisy stderr on <strong>every</strong> tool call inside any ship workspace.</td></tr>
+      <tr><td><code>ship-phase-gate.sh</code></td><td><code>ls -1dt</code> mtime ordering</td><td>Multi-run case picked stale runs over current ones. Hook would gate on the wrong policy.</td></tr>
+      <tr><td><code>ship-phase-gate.sh</code></td><td>Descendant-find vs ancestor-walk</td><td>Hook only fired when cwd was at or above <code>.ship/</code>. Deep cwd missed it. Common case in real work.</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    Each one would have wasted hours during the retrofit phase or
+    produced wrong behaviour in production. Together they validate the
+    rule that eventually went into memory: <em>always run both reviewers</em>.
+  </p>
+</section>
+
+<!-- ─── META ─────────────────────────────────── -->
+
+<section id="meta">
+  <div class="section-header">
+    <div class="section-num">§ 09</div>
+    <h2 class="section-title">Meta moment <em>— this site is the proof</em></h2>
+  </div>
+
+  <p>
+    The site you're reading was built using <code>/ship</code> v2 itself
+    as the Phase 7 acceptance test. It's the dogfood — the first real
+    production run of the pipeline I'd just shipped.
+  </p>
+
+  <p>
+    Stage 1 ran: <code>memory-keeper</code> wrote a real <code>patterns.md</code>
+    for this build, with content/deploy/process tags. Stages 2-8 ran with
+    the patterns prompt prefix injected. Stage 9's hook fired live — I
+    triggered it from inside the run directory and from a 2-level-deep
+    subdirectory, verifying the ancestor-walk fix in production. Stage
+    11 captured new feedback drafts (one of which is now in memory:
+    <em>ask the audience question before designing</em> — yes, I missed
+    that one).
+  </p>
+
+  <div class="callout callout--quote">
+    <p style="margin:0 0 0.5rem 0;"><strong>What broke during the dogfood run:</strong></p>
+    <p style="margin:0;">
+      I built v1 of this site as strict technical reference. Molly's
+      review: "this is too technical… what's a hook versus a skill?
+      where are the examples? references should be actual links."
+      Forced a full rewrite — the version you're reading. The original
+      was an internal docs site for someone who already knew the
+      system. The audience question never got asked. That's now a
+      <span class="tag tag--new">blocking</span> rule in memory.
+    </p>
+  </div>
+
+  <h3>Receipts from this very run</h3>
+
+  <div class="receipts">
+    <div class="receipt">
+      <h5>patterns.md</h5>
+      <div class="receipt-meta">.ship/2026-05-10-doc-site/patterns.md</div>
+      <p>Written by memory-keeper at Stage 1. Lists 4 always-load + tag-matched files for [content, deploy, process]. Real artefact in the repo.</p>
+    </div>
+    <div class="receipt">
+      <h5>deploy-log.md</h5>
+      <div class="receipt-meta">.ship/2026-05-10-doc-site/deploy-log.md</div>
+      <p>Stage 9 evidence. Includes the required <code>## Deploy attempt</code>, <code>## Observability:</code>, <code>## Smoke test:</code> sections that the hook checks.</p>
+    </div>
+    <div class="receipt">
+      <h5>draft-feedback/</h5>
+      <div class="receipt-meta">.ship/2026-05-10-doc-site/draft-feedback/</div>
+      <p>Stage 11 captures, before approval. Two drafts surfaced; one promoted to memory; one held back.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ─── LEARNINGS ───────────────────────────────── -->
+
+<section id="learnings">
+  <div class="section-header">
+    <div class="section-num">§ 10</div>
+    <h2 class="section-title">What I learned <em>— captured to memory</em></h2>
+  </div>
+
+  <p>
+    Four feedback memories landed during this build. Each follows the
+    same structure: rule first, then the concrete incident behind it,
+    then how to apply it next time.
+  </p>
+
+  <div class="receipts">
+    <div class="receipt">
+      <h5>Script over heredoc</h5>
+      <div class="receipt-meta">feedback_script_file_over_multiline_paste.md</div>
+      <p>When auto-mode blocks self-modification and I have to hand a script back to Molly, write it to a file. The terminal auto-indents pasted heredocs and Python rejects them. Two failed paste attempts before I switched to file-based.</p>
+    </div>
+
+    <div class="receipt">
+      <h5>Two reviewers, always</h5>
+      <div class="receipt-meta">feedback_subagent_review_loops_catch_real_bugs.md</div>
+      <p>Two small bash files. Eight critical bugs the code-quality reviewer found that the spec reviewer missed. Different bug classes — spec is "does it do what was asked"; quality is "what breaks when input drifts."</p>
+    </div>
+
+    <div class="receipt">
+      <h5>Sweep all docs</h5>
+      <div class="receipt-meta">feedback_sweep_all_docs_when_shipping_config_changes.md</div>
+      <p>Pushed v1 of the pipeline. Updated the "obvious" docs. Missed <code>architecture.md</code> entirely. Molly caught it. Lesson: grep ALL docs for stale refs before pushing — not the ones I happen to remember.</p>
+    </div>
+
+    <div class="receipt">
+      <h5>Ask the audience first <span class="tag tag--new">blocking</span></h5>
+      <div class="receipt-meta">feedback_ask_audience_before_designing.md</div>
+      <p>Built v1 of this site without asking who it was for. Defaulted to "future Molly" — an internal-docs audience. Molly's actual audience: senior tech builders curious about her setup. Required a full rewrite. Now a hard rule before any external deliverable: multiple-choice audience question first.</p>
+    </div>
+  </div>
+
+  <h4>One promoted to a learned pattern</h4>
+
+  <p>
+    The dogfooding pattern crystallised as a <code>learned/</code> file:
+    <em>when you ship v1 of a new system, the first real run should be
+    using that system to produce its own documentation or release
+    artefact</em>. Forces every gap to surface during the
+    most-attention moment. The recursion is the point.
+  </p>
+</section>
+
+<!-- ─── GAPS ────────────────────────────────────── -->
+
+<section id="gaps">
+  <div class="section-header">
+    <div class="section-num">§ 11</div>
+    <h2 class="section-title">What's still rough <em>— gaps + roadmap</em></h2>
+  </div>
+
+  <p>
+    v1 is a vertical slice, not a finished product. The honest list of
+    what hasn't been solved:
+  </p>
+
+  <div class="callout callout--warn">
+    <strong>Stage 9 is the only enforced gate.</strong> Stages 2, 4, 5,
+    7, 10 have inline reminders only. An agent that skips them won't
+    be hard-stopped. Phase B closes Stages 5 and 10; Phase C closes 2,
+    4, 7.
+  </div>
+
+  <div class="callout callout--warn">
+    <strong>Frontmatter coverage is 18 of 78 files.</strong> The
+    deploy-tagged subset got the v2 retrofit. The other 60 files don't
+    yet filter into <code>patterns.md</code> at pre-flight, even when
+    they'd match. Phase B finishes the rest.
+  </div>
+
+  <div class="callout callout--warn">
+    <strong>The full <code>memory-keeper</code> flow is untested in the wild.</strong>
+    Validator and hook tests exist. Stage 1 and Stage 11 ran during
+    this site build. But three real runs is the kill-criterion judgment
+    window — we have one.
+  </div>
+
+  <div class="callout callout--warn">
+    <strong>Self-modification is gated.</strong> Editing
+    <code>~/.claude/settings.json</code> from inside Claude is blocked
+    by the auto-mode classifier. Workaround: a registration script
+    Molly runs from her prompt with the <code>!</code> bang prefix.
+    Friction, not blocking.
+  </div>
+
+  <div class="callout callout--warn">
+    <strong>Eleven-stage ceremony is heavy on small features.</strong>
+    Hence <code>/build</code> and <code>/fix</code>. Phase C brings
+    memory-awareness to those modes — that design isn't done yet.
+  </div>
+
+  <h3>Phase B · after three real <code>/ship</code> runs</h3>
+  <ul>
+    <li>Frontmatter retrofit on the remaining 60 memory files.</li>
+    <li>Per-agent <code>ship-stage</code> + <code>ship-patterns</code> frontmatter on the eight existing agents.</li>
+    <li>Hook gates added on Stage 5 (Decision Lock) and Stage 10 (Handoff).</li>
+    <li>Pattern injection prefix becomes part of every Agent dispatch — currently it's an inline orchestrator habit.</li>
+  </ul>
+
+  <h3>Phase C · after Phase B validates</h3>
+  <ul>
+    <li>Hook gates on Stage 2 (Brainstorm), Stage 4 (Explore), Stage 7 (Test).</li>
+    <li><code>/build</code> and <code>/fix</code> get integration via a shared memory-aware skill.</li>
+    <li><code>patterns.md</code> becomes machine-readable JSON for downstream tooling.</li>
+    <li><code>MEMORY.md</code> auto-generated from frontmatter.</li>
+  </ul>
+
+  <h3>Kill criterion · when to give up</h3>
+  <p>
+    After three real <code>/ship</code> runs through Stage 9, simplify
+    back to bolt-on (pre-flight + capture only, drop the hook) if any
+    of these are true:
+  </p>
+  <ul>
+    <li>&lt; 30% of loaded patterns surface anything actionable across the three runs.</li>
+    <li>Zero new feedback files captured at Stage 11 across the three runs.</li>
+    <li>Hook false-positive rate &gt; 1 in 3 runs.</li>
+  </ul>
+  <p>
+    Naming the kill criterion in advance prevents sunk-cost
+    continuation of an over-engineered pipeline. It's the cheapest
+    insurance you can buy on a build like this.
+  </p>
+</section>
+
+<!-- ─── REFS ────────────────────────────────────── -->
+
+<section id="refs">
+  <div class="section-header">
+    <div class="section-num">§ 12</div>
+    <h2 class="section-title">Reading list <em>— what informed this</em></h2>
+  </div>
+
+  <p>
+    The ideas, tools, and writers I drew from while building this. The
+    Claude Code ecosystem is moving fast — most of these were live
+    discoveries during the build, not pre-planned reading.
+  </p>
+
+  <h4>Tools + plugins used directly</h4>
+
+  <ul class="link-list">
+    <li>
+      <a href="https://docs.claude.com/en/docs/claude-code/overview" class="bare">Claude Code · Anthropic docs</a>
+      <span class="link-note">The platform this all runs on. Hooks, skills, agents, settings.json — all documented here.</span>
+    </li>
+    <li>
+      <a href="https://github.com/anthropics/skills" class="bare">Anthropic Skills</a>
+      <span class="link-note">Source for the <code>brainstorming</code>, <code>writing-plans</code>, and <code>subagent-driven-development</code> skills used during this build.</span>
+    </li>
+    <li>
+      <a href="https://docs.claude.com/en/docs/claude-code/sub-agents" class="bare">Sub-agents · Claude Code docs</a>
+      <span class="link-note">The mechanics of Task-tool dispatch, per-agent context, model selection.</span>
+    </li>
+    <li>
+      <a href="https://docs.claude.com/en/docs/claude-code/hooks" class="bare">Hooks · Claude Code docs</a>
+      <span class="link-note">Lifecycle events, JSON protocol, how matchers scope hooks to specific tools.</span>
+    </li>
+    <li>
+      <a href="https://docs.claude.com/en/docs/claude-code/skills" class="bare">Skills · Claude Code docs</a>
+      <span class="link-note">SKILL.md format, description-based auto-invocation, how skills compose.</span>
+    </li>
+  </ul>
+
+  <h4>Conceptual influences</h4>
+
+  <ul class="link-list">
+    <li>
+      <a href="https://www.anthropic.com/news/claude-3-7-sonnet" class="bare">Anthropic · multi-agent systems writing</a>
+      <span class="link-note">The case for narrow specialist agents over one-big-agent. Shaped the 14-agent split.</span>
+    </li>
+    <li>
+      <a href="https://simonwillison.net/" class="bare">Simon Willison's weblog</a>
+      <span class="link-note">Long-running source for prompt-injection awareness, agent design, and tooling pragmatics. The "vibe coding and agentic engineering" framing showed up in May digests.</span>
+    </li>
+    <li>
+      <a href="https://every.to/" class="bare">Every</a>
+      <span class="link-note">Editorial style reference for the prose voice in this write-up. Their "show your work" essays informed the tone.</span>
+    </li>
+  </ul>
+
+  <h4>The actual receipts from this build</h4>
+
+  <ul class="link-list">
+    <li>
+      <a href="https://github.com/<your-github-username>/claude-config/blob/main/docs/specs/2026-05-10-ship-pipeline-v2-design.md" class="bare">The full design spec</a>
+      <span class="link-note">11 stages, frontmatter schema, risks, kill criterion, Phase B/C deferred work — committed alongside the code so you can read what I actually thought.</span>
+    </li>
+    <li>
+      <a href="https://github.com/<your-github-username>/claude-config/blob/main/docs/plans/2026-05-10-ship-pipeline-v2.md" class="bare">The 22-task implementation plan</a>
+      <span class="link-note">Each task with exact code, exact bash commands, expected outputs. A subagent could ship it cold.</span>
+    </li>
+    <li>
+      <a href="https://github.com/<your-github-username>/claude-config/blob/main/docs/ship-pipeline-v2.md" class="bare">The short-form overview</a>
+      <span class="link-note">A condensed summary committed alongside the code, for future maintenance.</span>
+    </li>
+    <li>
+      <a href="https://github.com/<your-github-username>/claude-config/blob/main/agents/memory-keeper.md" class="bare">memory-keeper agent definition</a>
+      <span class="link-note">~110 lines defining how Stage 1 pre-flight + Stage 11 capture work.</span>
+    </li>
+    <li>
+      <a href="https://github.com/<your-github-username>/claude-config/blob/main/hooks/ship-phase-gate.sh" class="bare">ship-phase-gate.sh hook</a>
+      <span class="link-note">The bash that enforces the 3-deploy rule. Tested with 11 fixtures.</span>
+    </li>
+    <li>
+      <a href="https://github.com/<your-github-username>/claude-config/blob/main/commands/ship.md" class="bare">/ship command</a>
+      <span class="link-note">The full eleven-stage pipeline as it lives in the repo today.</span>
+    </li>
+    <li>
+      <a href="https://github.com/<your-github-username>/claude-config" class="bare">The whole claude-config repo</a>
+      <span class="link-note">14 agents, 22 hooks, 40+ skills, 20 commands. Browse around.</span>
+    </li>
+  </ul>
+
+  <h4>Type + visual choices</h4>
+
+  <ul class="link-list">
+    <li>
+      <a href="https://fonts.google.com/specimen/Fraunces" class="bare">Fraunces</a>
+      <span class="link-note">Display serif. Used for headings + the lede. Distinctive optical-size axis.</span>
+    </li>
+    <li>
+      <a href="https://fonts.google.com/specimen/DM+Sans" class="bare">DM Sans</a>
+      <span class="link-note">Body sans. Picked for legibility at small sizes and the soft, friendly geometry that pairs well with Fraunces.</span>
+    </li>
+    <li>
+      <a href="https://www.jetbrains.com/lp/mono/" class="bare">JetBrains Mono</a>
+      <span class="link-note">Monospace for code, keys, mechanical labels.</span>
+    </li>
+    <li>
+      <a href="https://mermaid.js.org/" class="bare">Mermaid.js</a>
+      <span class="link-note">Diagram-as-code rendered client-side. The three diagrams above are mermaid blocks.</span>
+    </li>
+  </ul>
+</section>
+
+</main>
+
+</div>
+
+<footer>
+  <div class="footer-grid">
+    <div>
+      <h5>About this write-up</h5>
+      <p style="font-size:0.85rem; color:var(--paper-fade); max-width:none;">
+        Built using <code>/ship</code> v2 itself as the Phase 7
+        acceptance test. The pipeline orchestrated its own write-up.
+        Recursive, on purpose.
+      </p>
+      <p class="signoff">— Molly &amp; Claude · 2026 · 05 · 10</p>
+    </div>
+    <div>
+      <h5>Skip to</h5>
+      <ul>
+        <li><a href="#story">The story</a></li>
+        <li><a href="#example">Watch one /ship run</a></li>
+        <li><a href="#meta">Meta moment</a></li>
+        <li><a href="#gaps">Gaps + roadmap</a></li>
+        <li><a href="#refs">Reading list</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    fontFamily: '"DM Sans", system-ui, sans-serif',
+    themeVariables: {
+      darkMode: true,
+      background: '#181614',
+      primaryColor: '#181614',
+      primaryTextColor: '#f4ebe0',
+      primaryBorderColor: '#f0a868',
+      lineColor: '#8a7f73',
+      secondaryColor: '#232020',
+      tertiaryColor: '#0e0d0c',
+      mainBkg: '#181614',
+      nodeBorder: '#8a7f73',
+      clusterBkg: '#0e0d0c',
+      clusterBorder: '#2a2624',
+      titleColor: '#f0a868',
+      edgeLabelBackground: '#0e0d0c',
+      labelBackground: '#0e0d0c',
+      actorBkg: '#181614',
+      actorBorder: '#f0a868',
+      actorTextColor: '#f4ebe0',
+      actorLineColor: '#8a7f73',
+      signalColor: '#f0a868',
+      signalTextColor: '#f4ebe0',
+      noteBkgColor: '#232020',
+      noteTextColor: '#f4ebe0',
+      noteBorderColor: '#6cd0c8',
+      sequenceNumberColor: '#0e0d0c'
+    }
+  });
+</script>
+
+</body>
+</html>

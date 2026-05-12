@@ -1,0 +1,10 @@
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Sync artifacts (in case install.sh creates any)
+*.bak
+*.bak-*
