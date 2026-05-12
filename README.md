@@ -231,6 +231,28 @@ The `learned/` patterns reference personal feedback file names (e.g. `feedback_s
 
 ---
 
+## Share
+
+If this saved you a setup pass, a one-line credit is appreciated but not required. Example tweet:
+
+> Just installed [@moleonthego](https://twitter.com/moleonthego)'s `claude-config-public` — 36 skills, 14 agents, 21 hooks, and a memory-aware `/ship` pipeline that won't let you end a session without a HANDOFF. Worth a read if you live in Claude Code.
+>
+> https://github.com/molly-diversifiedfun/claude-config-public
+
+<!--
+TWEET TEMPLATE — paste-ready. Customize first sentence:
+
+"Just installed @moleonthego's claude-config-public — 36 skills, 14 agents, 21 hooks, and a memory-aware /ship pipeline that won't let you end a session without a HANDOFF. Worth a read if you live in Claude Code.
+
+https://github.com/molly-diversifiedfun/claude-config-public"
+
+LINKEDIN TEMPLATE — slightly longer form:
+
+"If you're already a Claude Code power user, Molly Shelestak (@moleonthego on X) just open-sourced her working config. 36 skills, 14 agents, 21 lifecycle hooks, and a memory-aware /ship pipeline that loads tagged learnings from prior sessions before a feature starts. Snapshot — not maintained — so cherry-pick what fits.
+
+https://github.com/molly-diversifiedfun/claude-config-public"
+-->
+
 ## License
 
 MIT. Attribution appreciated but not required.
