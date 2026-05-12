@@ -40,7 +40,7 @@ See `rules/common/agents.md` for slash commands and orchestration rules.
 CARL auto-injects domain rules via `carl-loader.sh` on every UserPromptSubmit.
 - **GLOBAL + CONTEXT** always on. **COMMANDS** via star-commands (`*dev`, `*review`, `*brief`).
 - **RIGOR** triggers on: settings.json, config, schema, manifest, hooks, tsconfig, CLAUDE.md, plugins, MCP.
-- Domains: GLOBAL, CONTEXT, WORKFLOW, RIGOR, COMMANDS, CONTENT-RULES, WRITING.
+- Domains: GLOBAL, CONTEXT, WORKFLOW, RIGOR, COMMANDS, WRITING. (The original private config also carried CONTENT-RULES domain; stripped from this public snapshot.)
 - Use `carl-manager` skill to create/edit. Use `carl-help` for reference.
 
 ## Skill Collections

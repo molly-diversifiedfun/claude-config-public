@@ -50,7 +50,7 @@ See: [docs/skills.md](skills.md) for the full catalog.
 
 See: [docs/agents.md](agents.md) for the team roster.
 
-## Commands (`commands/`, 20 total)
+## Commands (`commands/`, 18 total)
 
 **Purpose:** User-typed entry points (`/build`, `/ship`, `/handoff`). Each command is a markdown file whose body becomes the prompt when typed.
 
@@ -65,17 +65,18 @@ See: [docs/agents.md](agents.md) for the team roster.
 
 See: [docs/commands.md](commands.md) for the reference.
 
-## Rules (`rules/`, 13 files in 4 domains)
+## Rules (`rules/`, 11 files in 3 domains)
 
-**Purpose:** Always-on context that gets injected into every session. Coding conventions, content voice, brand constraints, testing requirements, etc.
+**Purpose:** Always-on context that gets injected into every session. Coding conventions, testing requirements, etc.
 
 **Activation:** Auto-injected via the **CARL** rule loader (a hook at `UserPromptSubmit`). CARL loads `rules/common/*.md` always; domain-specific rules load when triggers in the user's message match.
 
 **Domains:**
 - `common/` — universal (coding-style, git-workflow, testing, security, agents, performance, patterns)
-- `content-system/` — content production rules (caption-generation, content-plan-enforcement)
 - `python/` — Python style
 - `typescript/` — TypeScript style
+
+> Note: the original private config carried a fourth `content-system/` domain with brand-specific content production rules (caption-generation, content-plan-enforcement). It was stripped from this public snapshot — bring your own content rules if you have a content pipeline.
 
 **When to add one:** When the rule should hold across most/all sessions in a domain. Don't put rules in skills (which only fire on match); rules are for things that need to be top-of-mind always.
 
@@ -101,7 +102,7 @@ See: [docs/hooks.md](hooks.md) for the hook reference.
 
 User says: *"write me an Instagram caption about ship-it culture"*
 
-1. **Hook** (`carl-loader.sh`) fires on UserPromptSubmit → injects `rules/common/coding-style.md`, `rules/content-system/caption-generation-enforcement.md`, brand voice rules.
+1. **Hook** (`carl-loader.sh`) fires on UserPromptSubmit → injects `rules/common/coding-style.md` and any domain rules matching the prompt (e.g. coding rules for code-shaped prompts).
 2. **Rule** (auto-loaded content rules) — Claude now knows: max 1 tool mention, no PM jargon, @your-handle handle, no AI-tell numbers like 47.
 3. **Skill** (`brand-voice-router`) auto-invokes because "Instagram caption" matches its trigger description → routes to <your brand> voice.
 4. **Skill** (`humanize-ai-writing`) auto-invokes after draft → strips AI patterns.

@@ -9,9 +9,10 @@ The auto-injection mechanism is **CARL** — a UserPromptSubmit hook (`hooks/car
 | Domain | What | Always-on? |
 |---|---|---|
 | `common/` | Universal rules — coding-style, git-workflow, testing, security, agents, performance, patterns, definition-of-done | Yes |
-| `content-system/` | Content production rules — caption-generation-enforcement, content-plan-enforcement | When content commands/skills fire |
 | `python/` | Python-specific style rules | When user is working in Python |
 | `typescript/` | TypeScript-specific style rules | When user is working in TS |
+
+> Note: the original private config carried a fourth `content-system/` domain with brand-specific content production rules (caption-generation-enforcement, content-plan-enforcement). It was stripped from this public snapshot. If you have a content production pipeline, add your own `content-system/` rules and register the domain in `hooks/carl-loader.sh`.
 
 ## What's in `common/`
 
@@ -26,13 +27,6 @@ The auto-injection mechanism is **CARL** — a UserPromptSubmit hook (`hooks/car
 | `patterns.md` | Skeleton projects, design patterns (repository, API response envelope) |
 | `definition-of-done.md` | DoD checklist enforced by `session-retrospective.sh` — code/verification/docs/tracking/decisions/deploy |
 
-## What's in `content-system/`
-
-| File | What |
-|---|---|
-| `caption-generation-enforcement.md` | No freehand captions; use `unstuck/prompts/caption-generator.md`; Mirror pillar stops at Agitate; CTA matches pillar |
-| `content-plan-enforcement.md` | Project lens rotation (max 2 of 6 weekly posts can be app/SaaS), tool mention limits (max 1 per file), PM jargon ban, hook cooloff (14d) |
-
 ## How CARL decides which rules to load
 
 `hooks/carl-loader.sh` runs at every UserPromptSubmit. It:
@@ -41,7 +35,7 @@ The auto-injection mechanism is **CARL** — a UserPromptSubmit hook (`hooks/car
 2. Scans the user's prompt for triggers:
    - File extensions (`.py` → python rules; `.ts`/`.tsx` → typescript rules)
    - Star-commands (`*dev` → development rules; `*review` → review rules; `*brief` → brief writing rules)
-   - Topic keywords (e.g., "caption" → content-system rules)
+   - Topic keywords (e.g., the private config had "caption" → content-system rules; you can register your own)
 3. Matches CLAUDE.md "RIGOR" triggers (settings.json, schema, manifest, hooks, plugins, MCP) → loads stricter validation rules
 4. Concatenates the matched rule files into a system context block
 
@@ -54,7 +48,7 @@ CARL recognizes star-prefixed words as load-domain triggers:
 - `*dev` → loads dev domain rules
 - `*review` → loads review domain rules
 - `*brief` → loads brief writing rules
-- `*content` → loads content-system rules
+- `*content` → was a content-system trigger in the private config; not active in this public snapshot (no content-system rules ship here)
 
 Use them by prefixing your message: "*dev help me refactor the auth flow" → CARL loads the dev rule set.
 

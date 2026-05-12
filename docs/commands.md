@@ -1,6 +1,6 @@
 # Slash Commands Reference
 
-20 commands. Each is a `~/.claude/commands/<name>.md` file whose body becomes the prompt when typed.
+18 commands. Each is a `~/.claude/commands/<name>.md` file whose body becomes the prompt when typed.
 
 ## Workflow modes
 

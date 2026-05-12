@@ -11,10 +11,10 @@ Load at session start (CARL WORKFLOW_RULE_10 says "read MEMORY.md index, activel
 |------|---------|-------------|
 | systematic-shortcutting.md | Don't skip steps to go faster (13 variants) | CARL WORKFLOW_RULE_0 |
 | never-fabricate.md | Never invent personal stories/numbers | CARL GLOBAL_RULE_6 |
-| ai-tell-avoidance.md | Kill AI writing tells (47, Notion, vocab) | CARL WRITING + CONTENT-RULES |
+| ai-tell-avoidance.md | Kill AI writing tells (47, Notion, vocab) | CARL WRITING (private config also enforced via CONTENT-RULES) |
 | verify-before-commit.md | Read agent output, surface silent failures, ask clear questions | CARL GLOBAL_RULE_5 |
 | delegation-discipline.md | Use the right agent; reuse existing skills before building | CARL WORKFLOW_RULE_5 |
-| voice-and-content-rules.md | Voice register, pillars, format mix, copy is sacred | CARL WRITING + CONTENT-RULES |
+| voice-and-content-rules.md | Voice register, pillars, format mix, copy is sacred | CARL WRITING (private config also enforced via CONTENT-RULES) |
 | documentation-after-build.md | DoD compliance, docs ship with code | rules/common/definition-of-done.md |
 | nonfiction-sourcing.md | Source facts before writing claims | CARL WRITING_RULE_5 |
 | deploy-iteration-discipline.md | 3-deploy rule, observability, change-set drift, framework abandonment | (process discipline) |
