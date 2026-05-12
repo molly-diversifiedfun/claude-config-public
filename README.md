@@ -56,23 +56,39 @@ A mature, opinionated [Claude Code](https://claude.ai/code) setup published as a
 
 ## Quick start (cherry-pick, don't clone-and-run)
 
+> **⚠️ If you already have a `~/.claude/` setup, back it up first.** `bin/install.sh` uses `rsync --delete` on `~/.claude/{skills,agents,commands,rules,hooks,scripts}` — files in those dirs that aren't in this repo will be removed. The script now prompts before overwriting, but a backup is the right insurance.
+>
+> ```sh
+> cp -R ~/.claude ~/.claude.backup-$(date +%Y%m%d)
+> ```
+
 ```sh
 # 1. Clone somewhere safe (NOT directly to ~/.claude/)
-git clone <this-repo> ~/code/claude-config-template
-cd ~/code/claude-config-template
+git clone https://github.com/molly-diversifiedfun/claude-config-public ~/code/claude-config-public
+cd ~/code/claude-config-public
 
 # 2. Read the architecture before installing anything
 $EDITOR docs/architecture.md docs/ship-pipeline-v2.md README.md
 
-# 3. Optional: run install.sh, but read it first
-$EDITOR bin/install.sh
-./bin/install.sh
+# 3a. Cherry-pick approach (recommended for existing power users):
+#     copy individual hooks/skills/agents you want into your own ~/.claude/.
+cp hooks/observe-learning.sh ~/.claude/hooks/   # example: just take the telemetry hook
+cp -R skills/learned ~/.claude/skills/           # example: just take the learned/ patterns
+
+# 3b. OR full install (recommended for fresh ~/.claude/):
+$EDITOR bin/install.sh   # read it first
+./bin/install.sh         # prompts before overwriting; use --yes to skip prompt
 ```
 
 `bin/install.sh` will:
-- Symlink `agents/`, `commands/`, `rules/`, `hooks/`, `scripts/`, `skills/`, `CLAUDE.md` into `~/.claude/`
-- Skip `settings.json` and `projects/` (those need per-machine setup)
-- Print a `CHECKLIST.md` of remaining manual steps (MCP server registration, OAuth, plugin install)
+- **Sync (rsync --delete)** `agents/`, `commands/`, `rules/`, `hooks/`, `scripts/`, `skills/` into `~/.claude/` — overwriting existing content in those dirs
+- **Copy** `CLAUDE.md` and (optional) `settings.local.json` to `~/.claude/`
+- **Skip** `settings.json` (has secrets and per-machine paths), `projects/` (per-project memory)
+- Leave `sessions/`, `cache/`, `telemetry/`, `backups/` alone
+
+`bin/bootstrap.sh` is a heavier one-shot for a **fresh Mac** — it installs Claude Code, runs `install.sh`, writes a baseline `settings.json`, prompts for OAuth login, and bulk-installs plugins. Read it before running. macOS + Homebrew assumed.
+
+After install, see [`CHECKLIST.md`](CHECKLIST.md) for the manual steps that can't be scripted (MCP server registration, plugin OAuth flows, API keys per skill).
 
 ## Customizing
 

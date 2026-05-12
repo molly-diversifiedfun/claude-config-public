@@ -2,9 +2,7 @@
 
 **Status:** v1 vertical slice shipped 2026-05-10. Stage 9 (Deploy + Smoke) gated end-to-end. Stages 1 + 11 (pre-flight + capture) wired. Stages 2–8 + 10 stay as inline reminders for v1; Phase B/C will gate them.
 
-**Spec:** `~/github/docs/superpowers/specs/2026-05-10-ship-pipeline-v2-design.md` (full architecture + decisions + kill criterion).
-
-**Plan:** `~/github/docs/superpowers/plans/2026-05-10-ship-pipeline-v2.md` (22-task implementation log).
+> The original spec + 22-task implementation plan are NOT in this public snapshot (they were excluded along with `docs/specs/` and `docs/plans/`). This doc is the standalone overview. The full design narrative lives in the [companion case study](https://github.com/molly-diversifiedfun/claude-skills) if/when it's published there.
 
 ## What changed
 

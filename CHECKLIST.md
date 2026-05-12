@@ -1,14 +1,14 @@
-# Post-Bootstrap Checklist — What's Still Missing
+# Post-Install Checklist — What `install.sh` / `bootstrap.sh` Can't Script
 
-After `bin/bootstrap.sh` finishes, work through this list to bring the new machine to parity with your primary machine.
+After running `bin/install.sh` (or `bin/bootstrap.sh` on a fresh Mac), this list covers the manual setup that can't be automated — credentials, OAuth flows, API keys, and external repos.
 
-## Must-have for parity
+## Must-have for the system to function
 
 ### 1. MCP server connections
 
 The biggest remaining piece. None of the MCP server registrations are in this repo — they have per-machine credentials and OAuth flows that can't be scripted.
 
-For each MCP server you use on your primary machine, register on the new machine:
+For each MCP server you want to use, register it:
 
 ```sh
 # Via the Claude desktop app:
@@ -18,33 +18,31 @@ For each MCP server you use on your primary machine, register on the new machine
 claude mcp add notion
 claude mcp add gmail
 claude mcp add google-calendar
-claude mcp add google-drive
-# etc. for each MCP
+# etc.
 ```
 
-The full list of MCPs you have on your primary machine (check `claude mcp list` there):
-- Anthropic-managed: Notion, Gmail, Google Calendar, Google Drive, Audible, Indeed, Miro, Mermaid, Spotify, Stripe, Vercel, Ahrefs, n8n, Canva, Firecrawl, Context7
-- Plugin-bundled: Playwright (via `playwright` plugin), Supabase (via `supabase` plugin), Context7 (via `context7` plugin)
+The original private config used these MCPs (pick what you actually need — the setup works with zero MCPs too):
+- **Anthropic-managed:** Notion, Gmail, Google Calendar, Google Drive, Canva, Firecrawl, Context7 (Audible/Indeed/Miro/Mermaid/Spotify/Stripe/Vercel/Ahrefs/n8n were also in the source list)
+- **Plugin-bundled:** Playwright (via `playwright` plugin), Supabase (via `supabase` plugin), Context7 (via `context7` plugin)
 
-Each registration takes ~10–15 min including OAuth. **Plan for 2–3 hours total.**
+Each registration takes ~10–15 min including OAuth. **Plan for 30 min – 3 hours** depending on how many you wire up.
 
-### 2. External skill repos
+### 2. External skill repos (optional)
 
-Some skills live OUTSIDE `~/.claude/` and reference external repos. Clone them:
+A few skills in the original config referenced repos that lived OUTSIDE `~/.claude/`. They're NOT included in this public snapshot but the agents reference them:
 
-```sh
-mkdir -p ~/github
-gh repo clone <whatever>/claude-code-toolkit ~/github/claude-code-toolkit
-```
+- `non-fiction-book-factory` (referenced by `content-longform` agent)
+- `ebook-factory`
+- `writing/`
 
-This brings in: `non-fiction-book-factory` (used by `content-longform` agent), `ebook-factory`, and `writing/` skills.
+If you want those, build them yourself or remove the references from `agents/content-longform.md`. The agents will work without them if you strip the references; they were optional in the original setup.
 
 ### 3. API keys for skills that need them
 
-Audit each skill's `SKILL.md` for `Authenticated via X_API_KEY` lines. Currently:
+Audit each skill's `SKILL.md` for `Authenticated via X_API_KEY` lines. Known ones:
 
-- `FIRECRAWL_API_KEY` — for the firecrawl skill
-- Possibly others (skill catalog evolves)
+- `FIRECRAWL_API_KEY` — for the `firecrawl` skill
+- Others may surface as you use more skills
 
 Add to `~/.zshrc`:
 
@@ -81,27 +79,29 @@ The launchd plist needs `CLAUDE_CODE_OAUTH_TOKEN` in its env block. **Critical:*
 
 ## Nice-to-have
 
-### 6. Project memory (intentionally not replicated)
+### 6. Project memory (intentionally not in this repo)
 
-`~/.claude/projects/<project-key>/` holds per-project agent memory + conversation transcripts. NOT in this repo (privacy + size). If you want a specific project's memory on the new machine:
+`~/.claude/projects/<project-key>/` holds per-project agent memory + conversation transcripts. NOT in this repo (privacy + size). It builds up naturally as you use Claude Code in each project.
+
+If you're migrating from another machine and want to bring existing project memory along:
 
 ```sh
-# On your primary machine:
+# On the source machine:
 tar czf ~/Desktop/project-memory.tgz ~/.claude/projects/<your-workspace-path>
 
-# Transfer to new machine, then:
+# Transfer to this machine, then:
 cd ~/.claude/projects/
 tar xzf ~/Desktop/project-memory.tgz
 ```
 
-Most projects can stay on your primary machine; the new machine builds its own memory as it's used.
+If you're starting fresh, skip this — memory will accumulate as you work.
 
 ### 7. Plugin install retries
 
 `bootstrap.sh` warns on each plugin install failure but doesn't stop. Common causes:
 - Marketplace not registered yet — run `claude plugin marketplace add <url>` then retry
 - Plugin renamed since the manifest was captured — manually find the new name
-- Plugin specific to your primary machine's setup (rare)
+- Plugin not available in your region or for your tier
 
 Audit failures, fix, run plugin install loop again:
 
