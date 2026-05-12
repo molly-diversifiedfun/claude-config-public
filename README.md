@@ -1,8 +1,97 @@
-# claude-config (public snapshot)
+# claude-config
 
-A mature, opinionated [Claude Code](https://claude.ai/code) setup published as a reference for power users. Snapshot from **2026-05-12**. Originally [Molly Shelestak](https://github.com/molly-diversifiedfun)'s working config, sanitized: brand voice, project memory, contact info, and session-specific files have been stripped.
+**A power-user Claude Code setup — 36 skills, 14 agents, 21 hooks, built around a memory-aware ship pipeline.**
 
-> **This is not a beginner template.** It's a peer-to-peer share of a working power-user setup. Read the architecture, copy what makes sense for your workflow, leave the rest. Don't expect to clone-and-run on day one.
+![license: MIT](https://img.shields.io/badge/license-MIT-blue) ![snapshot: 2026--05--12](https://img.shields.io/badge/snapshot-2026--05--12-orange) ![status: v1.0 \(no ongoing sync\)](https://img.shields.io/badge/status-v1.0%20snapshot-lightgrey) ![macOS / Linux](https://img.shields.io/badge/macOS%20%7C%20Linux-supported-success)
+
+A snapshot of [Molly Shelestak](https://github.com/molly-diversifiedfun)'s working `~/.claude/` config, sanitized for public reference. Power users + Claude Code builders are the audience — not beginners.
+
+## What you get
+
+- **A memory-aware `/ship` pipeline** that loads tagged learnings from past sessions before a feature starts and captures new feedback when it ends. Stops the same mistake recurring across projects.
+- **A 14-agent product team** (PM / engineer / reviewer / debugger / security / etc.) wired to specific models with specific skill palettes — no more "which agent do I spawn for this?"
+- **21 lifecycle hooks that enforce discipline**: block dangerous deletes, gate `/ship` deploys, log every Skill + Agent invocation for telemetry, refuse to end a session if the Definition of Done isn't met.
+
+---
+
+## TL;DR — grab one piece (60 seconds)
+
+Want the telemetry hook that logs every Skill + Agent invocation to `~/.claude/checkpoints/activity.jsonl`?
+
+```sh
+curl -sL https://raw.githubusercontent.com/molly-diversifiedfun/claude-config-public/main/hooks/observe-learning.sh \
+  -o ~/.claude/hooks/observe-learning.sh && chmod +x ~/.claude/hooks/observe-learning.sh
+```
+
+Then wire it in `~/.claude/settings.json`:
+
+```jsonc
+{ "hooks": {
+    "PreToolUse":  [{"matcher": "*", "hooks": [{"command": "$HOME/.claude/hooks/observe-learning.sh pre"}]}],
+    "PostToolUse": [{"matcher": "*", "hooks": [{"command": "$HOME/.claude/hooks/observe-learning.sh post"}]}]
+}}
+```
+
+That's it. Same pattern for any other hook (`block-dangerous.sh`, `session-retrospective.sh`, etc.) or any skill/agent.
+
+For the full system, [jump to Quick Start →](#quick-start-full-install)
+
+---
+
+## Proof it works
+
+The hooks aren't theory. Real outputs from a recent session:
+
+**`observe-learning.sh` capturing skill names in `activity.jsonl`:**
+
+```
+{"ts":"2026-05-12T00:21:36-0400","phase":"pre","tool":"Skill","file":"handoff","project":"/Users/.../nancy"}
+{"ts":"2026-05-12T00:21:37-0400","phase":"post","tool":"Skill","file":"handoff","project":"/Users/.../nancy"}
+{"ts":"2026-05-11T23:21:45-0400","phase":"post","tool":"Agent","file":"general-purpose","project":"/Users/.../sidekick"}
+```
+
+Every Skill invocation, every subagent dispatch, with timestamps. Re-runnable audits become trivial.
+
+**`session-retrospective.sh` blocking session-end on incomplete DoD:**
+
+```
+Stop hook blocking: "Running session retrospective..."
+DoD INCOMPLETE: HANDOFF.md not updated today.
+TASKS.md not updated today (298 tool uses in session).
+No learnings saved to memory (298 tool uses).
+Walk the Definition of Done (rules/common/definition-of-done.md) before ending session.
+```
+
+This actually fires. A 298-tool-use session would have ended without a handoff, without saved learnings, without tracker updates. The hook caught it. Next session resumes cleanly because of this.
+
+**`block-dangerous.sh` allowing legit deletes, blocking catastrophic ones (11/11 test cases):**
+
+```
+PASS  specific-abs-path      -> allowed
+PASS  specific-tilde         -> allowed
+PASS  relative-path          -> allowed
+PASS  bare-root              -> blocked
+PASS  root-glob              -> blocked
+PASS  bare-home              -> blocked
+PASS  home-glob              -> blocked
+PASS  git push --force       -> blocked
+```
+
+Test harness ships at `/tmp/test-block-dangerous.sh` (in commit `d2a6418`). The hook tightening came from a real session where the previous prefix-match version blocked legitimate `rm -rf /Users/.../skills/foo` deletes.
+
+---
+
+## Why this exists
+
+> One specific incident drove the most distinctive safety pattern:
+>
+> `bin/sync.sh` is one-way (`~/.claude/` → repo). I once edited 14 files on the **repo side** during a refactor. Ran sync. Every edit was silently reverted — sync just rsync'd the still-stale live copies on top. The repo files showed as Modified for a moment, then matched HEAD again. Twenty minutes of cleanup, then redo on the live side.
+>
+> The fix is in `feedback_live_first_sync_discipline.md` (private memory, distilled into the `learned/` patterns this repo ships). The lesson: **edit live first, sync, commit**. Now it's a memory-loaded reminder for every future `/ship` run in any project — the kind of cross-project learning the original config is designed to compound.
+
+Every hook, every learned pattern, every agent definition has a story like this behind it. The repo is the artifact; the discipline is what makes it work.
+
+---
 
 ## What's inside
 
@@ -12,51 +101,48 @@ A mature, opinionated [Claude Code](https://claude.ai/code) setup published as a
 | `commands/` | Slash commands (`/fix`, `/build`, `/ship`, `/write`, `/escalate-to`, `/plan`, etc.) | 18 |
 | `skills/` | Custom skills (auto-invoked via the Skill tool when their description matches the prompt) | 36 |
 | `rules/` | Coding / git / testing / security rules + CARL domain configs | 11 files |
-| `hooks/` | Shell scripts wired into the Claude Code lifecycle (PreToolUse, PostToolUse, Stop, SessionStart, etc.) | 21 |
+| `hooks/` | Shell scripts wired into the Claude Code lifecycle | 21 |
 | `scripts/` | Runtime utilities (frontmatter validator, ship-phase-gate test harness, hook registrar) | 4 |
-| `docs/` | Architecture, ship-pipeline-v2 spec, skills/agents/commands catalogs, install guide | 8+ |
+| `docs/` | Architecture, ship-pipeline-v2 spec, skills/agents/commands catalogs, install guide | 8 |
 | `CLAUDE.md` | Global instructions that auto-load every session | 1 |
 | `bin/` | `install.sh`, `sync.sh`, `bootstrap.sh`, `sanitize-for-public.sh` | 4 |
 
-**Not included** (intentionally):
-- `settings.json` — has secrets and per-machine paths
-- `projects/` — per-project memory (personal)
-- `HANDOFF.md`, `TASKS.md`, `.ship/` — session-specific state
-- `skills/brand-voice-router/` — was brand-specific; included as a *template stub* showing the pattern
-- `rules/content-system/` — brand-specific content pipeline rules
+**Not included** (intentionally): `settings.json` (secrets), `projects/` (per-project memory), `HANDOFF.md` / `TASKS.md` / `.ship/` (session-specific), `skills/brand-voice-router/` (was brand-specific — ships as a template stub), `rules/content-system/` (brand content pipeline).
+
+---
+
+## The 5-mode workflow
+
+```
+USER REQUEST
+    │
+    ├─ /fix           → quick patch, no spec, single edit
+    ├─ /build         → spec → 3-5 agents → review → tests → ship
+    ├─ /ship          → MEMORY-AWARE 11-stage pipeline
+    │                    pre-flight: memory-keeper loads tagged patterns
+    │                    stages 2-8:  9 agents
+    │                    stage  9:    deploy + smoke (hook-gated)
+    │                    capture:     new feedback → learned/
+    ├─ /write         → content with brand voice
+    └─ /escalate-to   → mode transition mid-task
+```
+
+Full architecture in [`docs/architecture.md`](docs/architecture.md). Ship pipeline detail in [`docs/ship-pipeline-v2.md`](docs/ship-pipeline-v2.md).
+
+---
 
 ## The interesting parts
 
-**[`docs/ship-pipeline-v2.md`](docs/ship-pipeline-v2.md)** — A memory-aware 11-stage feature pipeline that loads tagged learnings into a `patterns.md` manifest at pre-flight, gates Stage 9 (Deploy + Smoke) with a hook enforcing the 3-deploy rule + observability + smoke-test sections, and captures new feedback at post-flight. Built to stop the same mistakes recurring.
+- **[`docs/ship-pipeline-v2.md`](docs/ship-pipeline-v2.md)** — A memory-aware 11-stage feature pipeline that loads tagged learnings into a `patterns.md` manifest at pre-flight, gates Stage 9 (Deploy + Smoke) with a hook enforcing the 3-deploy rule + observability + smoke-test sections, and captures new feedback at post-flight.
+- **`hooks/`** — Lifecycle scripts that enforce discipline. `session-retrospective.sh` (Stop, 7-check DoD), `block-dangerous.sh` (PreToolUse:Bash, regex-tightened), `observe-learning.sh` (telemetry), `agent-batch-validator.sh` (≤4 file paths per Agent prompt), `ship-phase-gate.sh` (gates `/ship` Stage 9), `carl-loader.sh` (CARL rule injection).
+- **`skills/learned/`** — 16 cross-project patterns synthesized from session feedback. v2 frontmatter (`applies-to`, `projects`, `severity`, `phase`) so the ship-pipeline can filter-load them. Start with `systematic-shortcutting.md`, `verify-before-commit.md`, `deploy-iteration-discipline.md`.
+- **The 14 agents** — `product-lead` (opus) plans, `engineer` (sonnet) builds, `reviewer` (sonnet) reviews, `designer` (sonnet) does UI/UX, `debugger` (opus) investigates, `tech-researcher` (sonnet) checks docs, `security` (opus) audits, `project-manager` (haiku) tracks, `memory-keeper` (haiku) owns ship-pipeline Stage 1 + 11, 4 `content-*` agents (lanes), `market-researcher` (sales/market intel).
 
-**[`docs/architecture.md`](docs/architecture.md)** — How the pieces fit: skills vs agents vs commands vs hooks vs rules. The mental model.
+---
 
-**`hooks/`** — Lifecycle scripts that enforce discipline:
-- `session-retrospective.sh` (Stop): 7-check Definition of Done — blocks session end if HANDOFF.md, TASKS.md, memory aren't updated.
-- `block-dangerous.sh` (PreToolUse:Bash): regex-tightened to allow specific-path `rm -rf` while blocking catastrophic forms (root, home, glob).
-- `observe-learning.sh` (Pre/PostToolUse): logs every tool invocation with skill name + subagent_type to `activity.jsonl` for usage telemetry.
-- `agent-batch-validator.sh` (PreToolUse:Agent): enforces ≤4 explicit file path refs in agent prompts.
-- `ship-phase-gate.sh` (PostToolUse:Agent|Bash): gates `/ship` Stage 9.
-- `carl-loader.sh` (UserPromptSubmit): injects CARL domain rules (rule-system primer).
+## Quick start — full install
 
-**`skills/learned/`** — 16 cross-project patterns synthesized from session feedback. Each has v2 frontmatter (`applies-to`, `projects`, `severity`, `phase`) so the ship-pipeline can filter-load them. Read `systematic-shortcutting.md`, `verify-before-commit.md`, and `deploy-iteration-discipline.md` first.
-
-**The 14 agents** — Opinionated product team:
-- `product-lead` (opus) → planning
-- `engineer` (sonnet) → implementation
-- `reviewer` (sonnet) → code review (read-only)
-- `designer` (sonnet) → UI/UX
-- `debugger` (opus) → bug investigation
-- `tech-researcher` (sonnet) → API/library research
-- `security` (opus) → audit (read-only)
-- `project-manager` (haiku) → tracking + summaries
-- `memory-keeper` (haiku) → owns ship-pipeline Stage 1 + Stage 11
-- 4 `content-*` agents → content production lanes (architecture is reusable; brand-specifics were stripped)
-- `market-researcher` → sales/market research + fact verification
-
-## Quick start (cherry-pick, don't clone-and-run)
-
-> **⚠️ If you already have a `~/.claude/` setup, back it up first.** `bin/install.sh` uses `rsync --delete` on `~/.claude/{skills,agents,commands,rules,hooks,scripts}` — files in those dirs that aren't in this repo will be removed. The script now prompts before overwriting, but a backup is the right insurance.
+> **⚠️ If you already have a `~/.claude/` setup, back it up first.** `bin/install.sh` uses `rsync --delete` on `~/.claude/{skills,agents,commands,rules,hooks,scripts}` — files in those dirs that aren't in this repo will be removed. The script prompts before overwriting, but a backup is the right insurance.
 >
 > ```sh
 > cp -R ~/.claude ~/.claude.backup-$(date +%Y%m%d)
@@ -68,47 +154,49 @@ git clone https://github.com/molly-diversifiedfun/claude-config-public ~/code/cl
 cd ~/code/claude-config-public
 
 # 2. Read the architecture before installing anything
-$EDITOR docs/architecture.md docs/ship-pipeline-v2.md README.md
+$EDITOR docs/architecture.md docs/ship-pipeline-v2.md
 
-# 3a. Cherry-pick approach (recommended for existing power users):
-#     copy individual hooks/skills/agents you want into your own ~/.claude/.
-cp hooks/observe-learning.sh ~/.claude/hooks/   # example: just take the telemetry hook
-cp -R skills/learned ~/.claude/skills/           # example: just take the learned/ patterns
-
-# 3b. OR full install (recommended for fresh ~/.claude/):
-$EDITOR bin/install.sh   # read it first
-./bin/install.sh         # prompts before overwriting; use --yes to skip prompt
+# 3. Read install.sh, then run it
+$EDITOR bin/install.sh
+./bin/install.sh           # prompts before overwriting; use --yes to skip prompt
 ```
 
 `bin/install.sh` will:
 - **Sync (rsync --delete)** `agents/`, `commands/`, `rules/`, `hooks/`, `scripts/`, `skills/` into `~/.claude/` — overwriting existing content in those dirs
-- **Copy** `CLAUDE.md` and (optional) `settings.local.json` to `~/.claude/`
-- **Skip** `settings.json` (has secrets and per-machine paths), `projects/` (per-project memory)
+- **Copy** `CLAUDE.md` to `~/.claude/`
+- **Skip** `settings.json` (has secrets), `projects/` (per-project memory), `settings.local.json` (this snapshot doesn't ship one)
 - Leave `sessions/`, `cache/`, `telemetry/`, `backups/` alone
 
-`bin/bootstrap.sh` is a heavier one-shot for a **fresh Mac** — it installs Claude Code, runs `install.sh`, writes a baseline `settings.json`, prompts for OAuth login, and bulk-installs plugins. Read it before running. macOS + Homebrew assumed.
+`bin/bootstrap.sh` is a heavier one-shot for a **fresh Mac** — installs Claude Code, runs `install.sh`, writes a baseline `settings.json`, prompts for OAuth login, bulk-installs plugins. macOS + Homebrew assumed.
 
-After install, see [`CHECKLIST.md`](CHECKLIST.md) for the manual steps that can't be scripted (MCP server registration, plugin OAuth flows, API keys per skill).
+After install, see [`CHECKLIST.md`](CHECKLIST.md) for manual steps that can't be scripted (MCP server registration, plugin OAuth flows, API keys per skill).
+
+---
 
 ## Customizing
 
-Every reference to `<your brand>`, `<your-project-1>`, `<your nonfiction project>`, `<your signature project>`, `<your-content-brand>`, `<your-agent-project>`, `<your-personal-ai-project>`, etc., is a placeholder where personal content was stripped. Replace with your own.
+Every reference to `<your brand>`, `<your-project-1>`, `<your-content-brand>`, etc., is a placeholder where personal content was stripped. Replace with your own.
 
-The `learned/` patterns reference personal feedback file names (e.g. `feedback_session_<project>_learnings.md`). Those files don't exist in this repo (they were in the private memory dir) but the references are kept as breadcrumbs showing the source-of-truth pattern: cross-project learnings get distilled from session feedback into `learned/` over time.
+The `learned/` patterns reference personal feedback file names (e.g. `feedback_session_<project>_learnings.md`). Those files aren't in this repo (they were in the private memory dir) but the references stay as breadcrumbs showing the source-of-truth pattern: cross-project learnings get distilled from session feedback into `learned/` over time.
+
+---
 
 ## Conventions you'll need to understand
 
 - **CARL** — A domain-rule injection system. See `hooks/carl-loader.sh` and `rules/common/`. The `*dev`, `*review`, `*brief` star-commands invoke specific rule domains.
 - **Ship-pipeline v2** — `/ship` is memory-aware. Pre-flight loads tagged memory files. Stage 9 has a hook gate. Stage 11 captures new feedback. Full spec in `docs/ship-pipeline-v2.md`.
-- **5-mode workflow** — `/fix` (quick), `/build` (standard), `/ship` (full pipeline), `/write` (content), `/escalate-to` (mode transition).
-- **Live-first sync discipline** — `bin/sync.sh` is one-way (`~/.claude/` → repo). Edit live first, then sync. The original config's private memory documents the failure mode that drove this rule.
+- **Live-first sync discipline** — `bin/sync.sh` is one-way (`~/.claude/` → repo). Edit live first, then sync. See the "Why this exists" section above for the failure mode that drove this rule.
+
+---
 
 ## What's NOT for the faint of heart
 
-- Hooks enforce a strict DoD. Sessions are blocked from ending if HANDOFF.md / TASKS.md aren't updated. If you don't want that, comment out the `Stop` hook in `~/.claude/settings.json` after install.
+- Hooks enforce a strict DoD. Sessions are blocked from ending if HANDOFF.md / TASKS.md / memory aren't updated. To disable, comment out the `Stop` hook in `~/.claude/settings.json` after install.
 - `block-dangerous.sh` blocks force-pushes, sudo, root-level `rm -rf`, and `curl | sh`. If you actually need to push --force, run it outside the session or edit the hook.
 - `agent-batch-validator.sh` caps file path refs in Agent prompts at 4. Forces you to write "grep for X" instead of listing 10 files.
-- The 16 `learned/` patterns are opinionated. Read them; disagree if you disagree; delete what doesn't fit you.
+- The 16 `learned/` patterns are opinionated. Read them; disagree where you disagree; delete what doesn't fit you.
+
+---
 
 ## License
 
@@ -116,6 +204,6 @@ MIT. Attribution appreciated but not required.
 
 ## Provenance
 
-Snapshot from Molly Shelestak's working Claude Code config on 2026-05-12. Generated via `bin/sanitize-for-public.sh` from the private mirror. No commitment to ongoing sync — this is v1.0 and may be updated periodically or never.
+Snapshot of Molly Shelestak's working Claude Code config on 2026-05-12. Generated via `bin/sanitize-for-public.sh` from the private mirror. **No commitment to ongoing sync** — this is v1.0 and may be updated periodically or never.
 
 The companion public skill marketplace lives at [claude-skills](https://github.com/molly-diversifiedfun/claude-skills).
