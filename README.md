@@ -3,6 +3,7 @@
 **A power-user Claude Code setup — 36 skills, 14 agents, 21 hooks, built around a memory-aware ship pipeline.**
 
 ![license: MIT](https://img.shields.io/badge/license-MIT-blue) ![snapshot: 2026--05--12](https://img.shields.io/badge/snapshot-2026--05--12-orange) ![status: v1.0 \(no ongoing sync\)](https://img.shields.io/badge/status-v1.0%20snapshot-lightgrey) ![macOS / Linux](https://img.shields.io/badge/macOS%20%7C%20Linux-supported-success)
+<!-- Social preview card: assets/og-card.png (1200x630). Uploaded manually via repo Settings > Social preview. -->
 
 A snapshot of [Molly Shelestak](https://github.com/molly-diversifiedfun)'s working `~/.claude/` config, sanitized for public reference. Power users + Claude Code builders are the audience — not beginners.
 
