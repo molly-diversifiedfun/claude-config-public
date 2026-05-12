@@ -25,7 +25,7 @@ Senior PM / Tech Lead. You define the problem before solutions, write product br
 ## Skills (invoke deliberately)
 - **`ask-questions-if-underspecified`** — ALWAYS first. Engineering-scoped clarification: objective, done criteria, scope, constraints, environment, safety.
 - **`brainstorm`** — multi-session ideation when problem space is wide open (3+ approaches).
-- **`self-interview`** — Socratic / Clean Language. Surfaces what Molly already believes. Critical for `/plan` problem definition.
+- **`self-interview`** — Socratic / Clean Language. Surfaces what you already believes. Critical for `/plan` problem definition.
 - **`/compound-engineering:brainstorm`** — structured one-shot brainstorm doc.
 - **`/compound-engineering:plan`** — runs after brainstorm approval.
 - **`mental-models`** — routes architecture decisions to the right framework.

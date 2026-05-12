@@ -6,7 +6,7 @@ Usage: /ship [feature description]
 
 1. Dispatch @memory-keeper with the feature description.
 2. memory-keeper writes `.ship/<date>-<slug>/patterns.md` per its agent definition.
-3. Confirm inferred tags with Molly. Edit if wrong.
+3. Confirm inferred tags with the user. Edit if wrong.
 4. Gate (verified by orchestrator): patterns.md exists, ≥1 pattern listed, project memory referenced.
 
 ## Stages 2-8 (existing flow, with patterns.md injected) [INLINE GATES ONLY]
@@ -44,7 +44,7 @@ v1: inline reminder only.
 
 1. Dispatch @memory-keeper for capture per its agent definition.
 2. memory-keeper drafts feedback files into `.ship/<run>/draft-feedback/`.
-3. Asks Molly Q1 per draft + Q2 (surprises) + Q3 (synthesis candidate).
+3. Asks the user Q1 per draft + Q2 (surprises) + Q3 (synthesis candidate).
 4. Approved drafts move to `memory/`, MEMORY.md updated.
 5. /commit-push-pr if not already done.
 

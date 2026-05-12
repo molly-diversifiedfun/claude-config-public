@@ -36,7 +36,7 @@ Read-only checklist QA gate. Every content-* agent spawns you before declaring d
 6. Reading-level matches brand target
 
 **Brand & handles**
-7. **@your-handle** (never @mollywood) — **HARD FAIL**
+7. **@your-handle** (never @your-wrong-handle) — **HARD FAIL**
 8. Brand voice file rules satisfied
 9. **Number 47 → 0 hits — HARD FAIL**
 10. Tool mentions ≤1 per file

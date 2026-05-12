@@ -12,11 +12,11 @@ last-validated: 2026-05-07
 
 # Pattern: Secrets Go Direct to Deploy Target
 
-API keys, bot tokens, OAuth secrets, service role keys, refresh tokens — never travel through chat. Default workflow: Molly sets them directly in the deploy target (Railway/Vercel env, 1Password) and tells Claude "set."
+API keys, bot tokens, OAuth secrets, service role keys, refresh tokens — never travel through chat. Default workflow: you sets them directly in the deploy target (Railway/Vercel env, 1Password) and tells Claude "set."
 
 ## Why workflow, not warnings
 
-By the time Claude warns, the secret is already in conversation logs and must be rotated. Molly optimizes for "fast handoff to Claude" over secret hygiene. The fix is workflow design.
+By the time Claude warns, the secret is already in conversation logs and must be rotated. you optimizes for "fast handoff to Claude" over secret hygiene. The fix is workflow design.
 
 <your-personal-ai-project> kickoff (2026-05-05): she pasted Anthropic API key + fresh Telegram bot token directly into chat for speed despite explicit warnings each time.
 
@@ -59,5 +59,5 @@ Same caution applies to any platform's "raw env editor" surface (Vercel, Fly.io 
 ## Cross-refs
 
 - `deploy-iteration-discipline.md` — change-set drift; secrets are shared-state, irreversible-on-leak
-- `~/github/<your-agent-project>/.claude/rules/rejected-patterns.md` — "Don't ask Molly to paste API keys"
+- `~/github/<your-agent-project>/.claude/rules/rejected-patterns.md` — "Don't ask the user to paste API keys"
 - Workspace memory: `feedback_secrets_go_direct_to_deploy.md`, `feedback_railway_raw_editor_leaks_secrets.md`, `reference_cloud_secret_show_once.md`

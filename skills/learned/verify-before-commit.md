@@ -50,7 +50,7 @@ to see actual values. Never assume field values match what code documentation or
 
 ## Ask clear yes/no questions, not ambiguous ones
 
-When asking Molly a question, never frame it as "Want me to do X, or save for next session?" — "yes" is ambiguous. Always frame as a clear yes/no or A/B with concrete actions. Before sending any question: if the answer is "yes," do I know exactly what to do? If not, reframe.
+When asking the user a question, never frame it as "Want me to do X, or save for next session?" — "yes" is ambiguous. Always frame as a clear yes/no or A/B with concrete actions. Before sending any question: if the answer is "yes," do I know exactly what to do? If not, reframe.
 
 When asking a multi-part question, label parts unambiguously. "password? + A/B?" → "1" → ambiguous. Use single-question OR consistent numbering throughout, never mixed.
 

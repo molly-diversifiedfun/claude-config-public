@@ -317,7 +317,7 @@ Before delivering, run this sweep on ALL output text:
 2. **Tool/reference diversity:** If you referenced the same tool (e.g., Notion) more than once, swap alternates: Figma, Vercel, Stripe, VS Code, Cursor, Linear, Railway, GitHub, Airtable.
 3. **Parallel structure:** Break any run of 3+ items with identical sentence structure. Vary length, syntax, and rhythm.
 4. **Voice DNA re-check:** Re-read the brand's banned vocabulary list. Flag any that slipped in.
-5. **Handle check:** Use the correct Instagram handle from brand rules (e.g., @your-handle, NOT @welcome.to.mollywood).
+5. **Handle check:** Use the correct Instagram handle from brand rules (e.g., @your-handle, NOT @your-wrong-handle-2).
 
 This sweep is the last step before delivery. Do not skip it.
 

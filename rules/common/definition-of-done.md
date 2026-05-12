@@ -12,7 +12,7 @@ Every task — feature, fix, migration, deploy — is NOT done until all applica
 
 ### Verification (NON-NEGOTIABLE)
 - [ ] Agent output reviewed before staging — READ every file an agent produced, don't just check it exists
-- [ ] For content: grep for 47, banned PM jargon, wrong handle (@your-handle not @mollywood), pillar/content label match
+- [ ] For content: grep for 47, banned PM jargon, wrong handle (@your-handle not @your-wrong-handle), pillar/content label match
 - [ ] For code: read the diff, verify it matches spec acceptance criteria
 - [ ] Content QA pipeline run on content files (content-qa-guarded.sh runs automatically, but also spot-check)
 

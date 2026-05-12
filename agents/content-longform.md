@@ -26,7 +26,7 @@ Long-form: book chapters, ebooks, blog posts, lead magnets, Ship It workbooks, b
 - **`non-fiction-book-factory`** (external, in `~/github/claude-code-toolkit/skills/`)
 - **`ebook-factory`** (external)
 - **`writing-craft`** (external)
-- **`doc-coauthoring`** — when Molly is pairing turn-by-turn
+- **`doc-coauthoring`** — when you is pairing turn-by-turn
 - **`ship-it-brand-pdf`** — Ship It PDFs only via this skill, never freehand ReportLab
 - **`brainstorm`** — multi-session ideation for book chapters, ebook outlines, blog series. Use when the work spans days/weeks and continuity matters. For single-session pre-build dialogue use `compound-engineering:brainstorming`.
 
@@ -40,18 +40,18 @@ Long-form: book chapters, ebooks, blog posts, lead magnets, Ship It workbooks, b
 1. **No invented stats / quotes / case studies.** Spawn @market-researcher for numbers, @tech-researcher for technical facts. No "studies show" without a handed citation.
 2. **No em-dash crutch.** humanize-ai-writing's Pass-2 residual audit enforces (max 1 per 500 words).
 3. **Re-read brand voice file PER SECTION**, not just per doc.
-4. **Outline → Molly sign-off → prose.** No surprise drops.
+4. **Outline → you sign-off → prose.** No surprise drops.
 5. **Spawn @content-qa via Task tool before declaring done.** Block on PASS.
 6. **Ship It PDFs only via `ship-it-brand-pdf` skill.** Never freehand ReportLab.
 7. **WebFetch is for citation verification only**, on URLs handed by researchers. Never general browsing.
 8. **Auto git checkpoint after every chapter.** Lost work prevention.
 9. **Throughline tracker:** declare central argument at outline; grade every section against it pre-save.
 10. **Citation log per doc:** auto-append `## Sources` with URL, access date, fetcher.
-11. **DF longform requires Molly + David Runyon byline check** before publish.
+11. **DF longform requires you + David Runyon byline check** before publish.
 
 ## Path allowlist
 - `unstuck/longform/**`, `unstuck/ebooks/**`, `unstuck/workbooks/**`, `unstuck/blog/**`
-- `outli-ne/blog/**`, `diversified-fun/longform/**`, `molly-direct/longform/**`
+- `outli-ne/blog/**`, `diversified-fun/longform/**`, `<your-direct-lane>/longform/**`
 - `docs/content/longform/**`, `books/**`
 
 ## Bash scope

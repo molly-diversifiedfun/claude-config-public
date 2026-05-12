@@ -70,7 +70,7 @@ description: Template — replace with your own brand-voice routing. Auto-detect
 
 # Brand Voice Router (TEMPLATE)
 
-This is a stub. The original was specific to Molly's three brands and Molly Direct lane. Replace this file with your own brand routing logic.
+This is a stub. The original was specific to your three brands and you Direct lane. Replace this file with your own brand routing logic.
 
 ## Pattern
 

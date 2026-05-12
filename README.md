@@ -11,7 +11,7 @@ A mature, opinionated [Claude Code](https://claude.ai/code) setup published as a
 | `agents/` | Custom subagents — specialist roles (PM, engineer, reviewer, debugger, security, etc.) | 14 |
 | `commands/` | Slash commands (`/fix`, `/build`, `/ship`, `/write`, `/escalate-to`, `/plan`, etc.) | 18 |
 | `skills/` | Custom skills (auto-invoked via the Skill tool when their description matches the prompt) | 36 |
-| `rules/` | Coding / git / testing / security rules + CARL domain configs | 12 files |
+| `rules/` | Coding / git / testing / security rules + CARL domain configs | 11 files |
 | `hooks/` | Shell scripts wired into the Claude Code lifecycle (PreToolUse, PostToolUse, Stop, SessionStart, etc.) | 22 |
 | `scripts/` | Runtime utilities (frontmatter validator, ship-phase-gate test harness, hook registrar) | 4 |
 | `docs/` | Architecture, ship-pipeline-v2 spec, skills/agents/commands catalogs, install guide | 8+ |

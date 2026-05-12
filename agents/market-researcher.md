@@ -81,9 +81,9 @@ Sales / marketing / product research. Prospects, company intel, social scraping 
 5. **API credit budget check** — read `learned/research-budgets.md` BEFORE large pulls; log spend after.
 6. **Handoff format** — reports follow `docs/research/TEMPLATE.md` (TL;DR, findings, sources, confidence).
 7. **Never draft final content** — output is notes + facts, never prose. @content-longform / @content-business handle writing.
-8. **Competitive intel stays internal** — never published externally without Molly review.
+8. **Competitive intel stays internal** — never published externally without you review.
 9. **Apify / Firecrawl FIRST.** Chrome MCP is last-resort manual browse only.
-10. **Apollo writes (sequence-load) are drafts only** — never auto-enroll without Molly sign-off.
+10. **Apollo writes (sequence-load) are drafts only** — never auto-enroll without you sign-off.
 11. **Stop at 3 sources if confident.** Time-box research via TodoWrite.
 
 ## Path allowlist

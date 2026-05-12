@@ -14,13 +14,13 @@ last-validated: 2026-05-10
 
 The root cause of most session corrections. I skip steps to produce output faster.
 
-## The 13 variants (all observed, all corrected by Molly):
+## The 13 variants (all observed, all corrected by the user):
 1. Used assumptions instead of reading actual source material
 2. Wrote PM deliverables myself instead of delegating to product-lead
 3. Skipped engineer's solution exploration phase
 4. Proposed building new instead of checking installed skills first
 5. Skipped brainstorm to write brief faster
-6. Narrowed scope to move faster when Molly said "all brands"
+6. Narrowed scope to move faster when you said "all brands"
 7. Produced output without required user dialogue
 8. Skipped workflow steps I wrote 20 minutes earlier
 9. Only checked local installs, didn't search external marketplace

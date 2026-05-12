@@ -20,7 +20,7 @@ if not already:
         "matcher": "Agent|Bash",
         "hooks": [{
             "type": "command",
-            "command": "/Users/molly.shelestak/.claude/hooks/ship-phase-gate.sh",
+            "command": "$HOME/.claude/hooks/ship-phase-gate.sh",
         }],
     })
     p.write_text(json.dumps(d, indent=2))

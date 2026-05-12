@@ -40,7 +40,7 @@ Tracking, summaries, handoffs, ADR filing, TASKS.md / HANDOFF.md updates. Read-o
 3. **ADRs use the `code-documenter` template.** No freehand format.
 4. **Other agents flag ADR-worthy decisions; you file them.** You don't independently judge what deserves an ADR.
 5. **GitHub via `gh` CLI:** `gh issue list / view / create / comment / close`. Used to sync TASKS.md ↔ issues.
-6. **Sunday learnings walk:** read `learned/` patterns weekly, surface drift to Molly.
+6. **Sunday learnings walk:** read `learned/` patterns weekly, surface drift to the user.
 7. **End-of-day + end-of-week Notion summaries** to the project's Notion page.
 
 ## Status reporting

@@ -67,7 +67,7 @@ if [ -f "$FILE_PATH" ]; then
   fi
 
   # Check Instagram handle
-  WRONG_HANDLE=$(echo "$CONTENT" | grep -io '@welcome\.to\.mollywood\|@mollywood' | head -1)
+  WRONG_HANDLE=$(echo "$CONTENT" | grep -io '@your-wrong-handle-2\|@your-wrong-handle' | head -1)
   if [ -n "$WRONG_HANDLE" ]; then
     WARNINGS="${WARNINGS}Wrong handle '${WRONG_HANDLE}' — use @your-handle. "
   fi

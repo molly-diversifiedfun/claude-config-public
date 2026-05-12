@@ -1,6 +1,6 @@
 # Learned Patterns
 
-Cross-project learnings synthesized from session feedback. 16 patterns extracted from 80+ memory files across 11 projects, representing corrections Molly has made repeatedly. Two former entries (`competitive-history.md` and `hook-performance.md`) were moved to the memory/ directory on 2026-05-12 — they were rolling data, not patterns.
+Cross-project learnings synthesized from session feedback. 16 patterns extracted from 80+ memory files across 11 projects, representing corrections you has made repeatedly. Two former entries (`competitive-history.md` and `hook-performance.md`) were moved to the memory/ directory on 2026-05-12 — they were rolling data, not patterns.
 
 ## When to use
 Load at session start (CARL WORKFLOW_RULE_10 says "read MEMORY.md index, actively apply feedback memories"). These files are the distilled, actionable version of scattered memory feedback.

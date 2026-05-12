@@ -6,13 +6,13 @@
 
 LEARNED_DIR="$HOME/.claude/skills/learned"
 MEMORY_DIRS=(
-  "$HOME/.claude/projects/-Users-molly-shelestak-github/memory"
-  "$HOME/.claude/projects/-Users-molly-shelestak-github-content-system/memory"
-  "$HOME/.claude/projects/-Users-molly-shelestak-github-unstuckwithmolly/memory"
-  "$HOME/.claude/projects/-Users-molly-shelestak-github-ship-it-system/memory"
-  "$HOME/.claude/projects/-Users-molly-shelestak-github-<your-project-2>/memory"
-  "$HOME/.claude/projects/-Users-molly-shelestak-github-moa-debate/memory"
-  "$HOME/.claude/projects/-Users-molly-shelestak-github-gig-analyzer-dash/memory"
+  "$HOME/.claude/projects/<your-workspace>/memory"
+  "$HOME/.claude/projects/<your-content-workspace>/memory"
+  "$HOME/.claude/projects/<your-content-workspace-2>/memory"
+  "$HOME/.claude/projects/<your-product-workspace>/memory"
+  "$HOME/.claude/projects/<your-workspace>-<your-project-2>/memory"
+  "$HOME/.claude/projects/<your-side-project>/memory"
+  "$HOME/.claude/projects/<your-saas-project>/memory"
 )
 
 mkdir -p "$LEARNED_DIR"

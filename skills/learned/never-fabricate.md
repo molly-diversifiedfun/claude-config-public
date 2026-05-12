@@ -7,35 +7,46 @@ projects: [all]
 severity: blocking
 phase: [define, explore, build, review, deploy, capture]
 trigger: [stat-without-source, story-without-evidence, made-up-metric]
-last-validated: 2026-05-10
+last-validated: 2026-05-12
 ---
 
 # Pattern: Never Fabricate Personal Details
 
-A previous session invented "$2,400 PDF on Gumroad" and propagated it across 20 files. Real story: $21 PDF, 3 sales.
+A previous session invented a story about a $2,400 product launch and propagated it across 20 files. The real story was a $21 product with 3 sales. The fabricated version was more flattering and would have been catastrophic if shipped publicly.
 
-## What's confirmed real:
-- <your unlaunched-thing example> Shopify store, 4 years, $1,392 in fees, never launched
-- $21 PDF on Gumroad, 4-module fillable worksheets, 3 sales from strangers
-- BurnFriends: first big ship, 200 users in 6 weeks
-- GiftShopper: Molly's OWN project (not a client), shipped in 6 weeks
-- Senior Director at Heap/Contentsquare, promoted 2026, 20+ years in tech
-- Career: Google → SoftBank → Neustar → Andela → Heap → Contentsquare
-- $5M migration recovery + $2M annual savings (Heap story specifically)
-- <your signature project> for <your specific public stories>
+This is one of the most common failure modes when an LLM is writing in someone's voice: it will invent plausible-sounding numbers, projects, milestones, and revenue figures that sound impressive. None of them are real.
 
-## What's confirmed fabricated (never use):
-- "Planned a video course for a year" — never happened
-- "Recorded a podcast, 2 episodes" — never happened
-- "Made a 47-slide course" — never happened
-- "Mom bought it with two email addresses" — her mom is dead
-- GiftShopper framed as a "client" story — it's Molly's project
+## The rule
 
-## Rule
-When writing content referencing Molly's experiences, ASK for real details. Small real numbers ($21 PDF, 3 sales) > fake impressive ones.
+**When writing content referencing your experiences, ASK for real details before writing.** Small real numbers ($21 PDF, 3 sales) > fake impressive ones ($2,400 PDF, 47 sales). The audience can smell fabrication; the LLM cannot.
+
+## How to apply
+
+Maintain a "confirmed real" / "confirmed fabricated" list in your private memory directory (an example template is shown below — fill in with your own data). Reference it before any content generation that involves personal narrative.
+
+### Template — confirmed real (replace with your own)
+
+```
+- <your launched product>, <real metric>
+- <your unlaunched product>, <real cost / time>
+- <your day job title / company / years>
+- <your career arc>
+- <your signature shipped project + outcome>
+```
+
+### Template — confirmed fabricated (never use)
+
+```
+- <stories the LLM has invented in past sessions that sounded plausible but aren't real>
+- <metrics that were inflated>
+- <relationships or events that never happened>
+```
+
+The original config tracked specific items in the workspace memory's `feedback_never_fabricate_personal_stories.md` file. That file isn't in this public snapshot but the pattern is the same: maintain the lists, reference them on every content task.
 
 ## Enforcement
-- CARL GLOBAL_RULE_6 (always on)
+
+- CARL GLOBAL_RULE_6 (always on) — single most-important rule across all content work
 - CARL CONTENT-RULES_RULE_1
 - CARL WRITING_RULE_5
-- feedback_never_fabricate_personal_stories.md (full reference)
+- Reference the per-workspace `feedback_never_fabricate_personal_stories.md` (or your equivalent) for the canonical real-story list

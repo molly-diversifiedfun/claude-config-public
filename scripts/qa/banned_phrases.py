@@ -30,7 +30,7 @@ DEFAULT_BANNED = {
         r"\bscope\b", r"\bsprint\b", r"\bstandup\b", r"\bdecompose\b",
         r"\bbacklog\b", r"\broadmap\b",
     ],
-    "wrong_handle": [r"@mollywood", r"@molly_shelestak"],
+    "wrong_handle": [r"@your-wrong-handle", r"@your-wrong-handle-3"],
     "banned_number": [r"\b47\b"],
 }
 

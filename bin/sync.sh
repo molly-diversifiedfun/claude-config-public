@@ -51,12 +51,12 @@ if [ -f "$SOURCE/settings.local.json" ]; then
   cp "$SOURCE/settings.local.json" "$REPO_DIR/settings.local.json"
 fi
 
-# Re-sanitize absolute paths in hooks (in case Molly added new ones with
-# /Users/molly.shelestak embedded). Replaces with $HOME so they're portable.
+# Re-sanitize absolute paths in hooks (in case you added new ones with
+# $HOME embedded). Replaces with $HOME so they're portable.
 echo "→ sanitizing absolute paths in hooks/"
 find "$REPO_DIR/hooks" -type f \( -name '*.sh' -o -name '*.js' \) | while read -r f; do
-  if grep -q '/Users/molly\.shelestak' "$f"; then
-    sed -i.bak 's|/Users/molly\.shelestak|$HOME|g' "$f"
+  if grep -q '$HOME' "$f"; then
+    sed -i.bak 's|$HOME|$HOME|g' "$f"
     rm "$f.bak"
     echo "  - sanitized: $(basename "$f")"
   fi

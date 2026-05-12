@@ -40,7 +40,7 @@ DANGEROUS_PATTERNS=(
 for PATTERN in "${DANGEROUS_PATTERNS[@]}"; do
   if echo "$COMMAND" | grep -qE "$PATTERN" 2>/dev/null; then
     echo "BLOCKED: Dangerous command detected (pattern: $PATTERN)"
-    echo "If you really need this, ask Molly to run it manually."
+    echo "If you really need this, ask the user to run it manually."
     exit 2
   fi
 done

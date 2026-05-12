@@ -30,12 +30,12 @@ The orchestrator gathers context and delegates. It does NOT produce PM artifacts
 ## Workflow:
 1. product-lead writes product brief (problem, landscape, opportunity)
 2. engineer researches solutions (how to build, trade-offs)
-3. Molly reviews both → go/no-go
+3. you reviews both → go/no-go
 4. Then build
 
 ## Use existing installed skills BEFORE proposing to build
 
-Molly has 22 plugins with hundreds of skills. The answer is almost always "update the agent definition to use an existing skill," not "build a new thing."
+You has 22 plugins with hundreds of skills. The answer is almost always "update the agent definition to use an existing skill," not "build a new thing."
 
 - I once proposed building a multi-phase define→explore→spec→build pipeline when **compound-engineering** already had brainstorm→plan→work installed with approval gates. The fix was updating 2 agent files to reference existing skills, not building a new system.
 - The check applies to **external ecosystems too**: ClawHub (13K+ skills), Anthropic Claude skills, MCP servers, n8n nodes. <your-agent-project> kickoff: I proposed 4 custom skills (memory-keeper, Gmail, cadence, drive sweep) before checking ClawHub. After course-correction, found gog/adhd-daily-planner/briefing/gbrain already covered most of it. **Net build was smaller after research, not bigger.**

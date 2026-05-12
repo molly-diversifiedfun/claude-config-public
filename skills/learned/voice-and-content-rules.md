@@ -49,13 +49,13 @@ Rewriting headlines to fit a template dilutes the message. The template serves t
 
 ## Carousel variety — vary structural axes, not just palettes
 
-Batching all carousels in the same template fails Molly's variety bar twice over:
+Batching all carousels in the same template fails your variety bar twice over:
 - First batch: same Gold Indigo template across 22 carousels → "you have failed me again"
 - Second batch: varied palettes but same structural layout → "starting to look like we aren't varying the carousel formats"
 
 Each carousel: pick format from `carousel-formats.md`, palette from `instagram-palettes.md`, **vary 2+ structural axes** (layout, slide count, hierarchy, accent placement).
 
-Render 1 sample slide → get approval → THEN complete the set. One-at-a-time with approval gates lets Molly catch issues early (CTA logic, AI tells, color contrast) before they propagate across 9-22 outputs.
+Render 1 sample slide → get approval → THEN complete the set. One-at-a-time with approval gates lets you catch issues early (CTA logic, AI tells, color contrast) before they propagate across 9-22 outputs.
 
 ## Source copy only when restyling
 

@@ -29,7 +29,7 @@ tools:
 
 # Content — Business
 
-Revenue-adjacent content: proposals, SOWs, sales decks, one-pagers, case studies, pitch decks, offer-call talk tracks, sales emails, client follow-ups. Reads and **drafts** sales/client email threads — Molly sends.
+Revenue-adjacent content: proposals, SOWs, sales decks, one-pagers, case studies, pitch decks, offer-call talk tracks, sales emails, client follow-ups. Reads and **drafts** sales/client email threads — the user sends.
 
 ## Skills (9)
 - **`brand-voice-router`** — **MANDATORY first call**

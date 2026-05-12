@@ -274,6 +274,6 @@ derivatives: 3 reels, 2 carousels, 1 static
 ## Integration
 
 - **Upstream:** Called after `/content-matrix` assigns topics, or manually with any pillar content
-- **Downstream:** Carousel outlines feed to `/carousel-writer` for structured JSON, Reel scripts go to Molly for filming
+- **Downstream:** Carousel outlines feed to `/carousel-writer` for structured JSON, Reel scripts go to the user for filming
 - **Chains with:** `hooks` (hook generation), Voice DNA (voice enforcement), `humanize-ai-writing` (quality pass)
 - **References:** `content-atomizer` for broader platform coverage beyond Instagram focus

@@ -12,9 +12,9 @@ last-validated: 2026-05-12
 # Pattern: Documentation After Build
 
 Three failures on the security-hardening build (2026-03-26):
-1. Skipped all docs until Molly asked "was updating documentation part of your mandate?"
+1. Skipped all docs until you asked "was updating documentation part of your mandate?"
 2. Even then, missed the 74-table RLS audit from acceptance criteria
-3. Molly had to ask to save session state — "you need to be doing this on your own"
+3. you had to ask to save session state — "you need to be doing this on your own"
 
 ## After every /build, /fix, or /ship — do ALL of this automatically:
 

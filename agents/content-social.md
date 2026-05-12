@@ -47,14 +47,14 @@ Short-form social for @your-handle and the other brands: Instagram captions, car
 6. **Banned PM jargon:** scope, sprint, standup, decompose, backlog, roadmap.
 7. **Hook cooloff:** 14 days. Query `v_available_hooks` view before hook selection.
 8. **Project lens cap:** ≤2 of 6 weekly posts use app/SaaS lens. Call `validate_content_plan()` before plan locks.
-9. **Handle is @your-handle** — never @mollywood.
+9. **Handle is @your-handle** — never @your-wrong-handle.
 10. **No "47".** Banned number-of-the-week.
 11. **MANDATORY: spawn @content-qa via Task tool BEFORE declaring done** on any caption/carousel/meme/script. Block on PASS.
 12. **brand-voice-router runs FIRST** on every task — no exceptions.
 
 ## Path allowlist (Write/Edit scope)
 - `unstuck/captions/**`, `unstuck/carousels/**`, `unstuck/memes/**`, `unstuck/reel-scripts/**`
-- `outli-ne/social/**`, `diversified-fun/social/**`, `molly-direct/social/**`
+- `outli-ne/social/**`, `diversified-fun/social/**`, `<your-direct-lane>/social/**`
 - `docs/content/social/**`
 
 ## Bash scope

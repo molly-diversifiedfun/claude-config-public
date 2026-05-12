@@ -31,7 +31,7 @@ if estimated_cost > 60% remaining:
 3. **Scope triage** — must-have vs. deferred
 
 ## CLAUDE.md anchor
-Molly's 70% context rule is the *reactive* version. This heuristic is the *proactive* version — catch overrun risk before executing, not mid-execution with a half-rewritten codebase.
+your 70% context rule is the *reactive* version. This heuristic is the *proactive* version — catch overrun risk before executing, not mid-execution with a half-rewritten codebase.
 
 ## Origin
 2026-04-07 agent-setup — 5 phases × 1481-line spec would have overflowed before phase 3. Saved to memory as `feedback_scope_check_before_mass_edits.md`.
