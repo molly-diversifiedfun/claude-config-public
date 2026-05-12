@@ -259,6 +259,6 @@ MIT. Attribution appreciated but not required.
 
 ## Provenance
 
-Snapshot of Molly Shelestak's working Claude Code config on 2026-05-12. Generated via `bin/sanitize-for-public.sh` from the private mirror. **No commitment to ongoing sync** — this is v1.0 and may be updated periodically or never.
+Snapshot of Molly Shelestak's working Claude Code config. Generated via `bin/sanitize-for-public.sh` from the private mirror. See [`CHANGELOG.md`](CHANGELOG.md) for the v1.0 contents and any future versions. **No timeline commitment** — this is a calendar-versioned snapshot, not a maintained library. If v1.1 ships, it lands in CHANGELOG.
 
 The companion public skill marketplace lives at [claude-skills](https://github.com/molly-diversifiedfun/claude-skills).
