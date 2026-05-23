@@ -1,0 +1,9 @@
+# alpha (drifted): remote SHA ffff... ≠ installed aaaa...
+-C .*alpha remote get-url origin|https://example.invalid/alpha.git||0|0
+-C .*alpha ls-remote origin HEAD|ffffffffffffffffffffffffffffffffffffffff	HEAD||0|0
+# beta (current): remote SHA bbbb... == installed bbbb...
+-C .*beta remote get-url origin|https://example.invalid/beta.git||0|0
+-C .*beta ls-remote origin HEAD|bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb	HEAD||0|0
+# gamma (skipped:unreachable): ls-remote exits 128
+-C .*gamma remote get-url origin|https://example.invalid/gamma.git||0|0
+-C .*gamma ls-remote origin HEAD||fatal: unable to access|128|0

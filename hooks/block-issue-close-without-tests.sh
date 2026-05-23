@@ -4,8 +4,18 @@
 # Receives JSON on stdin from Claude Code PreToolUse hook.
 # Only fires on `gh issue close` commands.
 # Exit 0 = allow, Exit 2 = block with message.
+#
+# Kill switch: ISSUE_CLOSE_GATE=off <command>
 
 set -uo pipefail
+
+# Kill switch — fail-open if explicitly disabled
+if [[ "${ISSUE_CLOSE_GATE:-on}" == "off" ]]; then
+  exit 0
+fi
+
+# Shared block logger (no-op if lib missing)
+source "$HOME/.claude/hooks/lib/log-block.sh" 2>/dev/null || true
 
 INPUT=$(cat)
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)
@@ -25,12 +35,14 @@ if echo "$COMMAND" | grep -qiE 'test|e2e|verified|coverage|spec'; then
   exit 0
 fi
 
-echo "🚫 BLOCKED: Cannot close GitHub issue without mentioning test evidence."
-echo ""
-echo "DoD requires unit + E2E tests before closing. Include one of:"
-echo "  - 'Tests verified' or 'E2E passing'"
-echo "  - 'Verified — no code changes needed' (for non-code issues)"
-echo "  - 'Closing as duplicate' (for dupes)"
-echo ""
-echo "If the issue genuinely needs no tests, add '--comment \"Verified — ...\"'"
+echo "🚫 BLOCKED: Cannot close GitHub issue without mentioning test evidence." >&2
+echo "" >&2
+echo "DoD requires unit + E2E tests before closing. Include one of:" >&2
+echo "  - 'Tests verified' or 'E2E passing'" >&2
+echo "  - 'Verified — no code changes needed' (for non-code issues)" >&2
+echo "  - 'Closing as duplicate' (for dupes)" >&2
+echo "" >&2
+echo "If the issue genuinely needs no tests, add '--comment \"Verified — ...\"'" >&2
+echo "  Kill switch: ISSUE_CLOSE_GATE=off <command>" >&2
+type log_block >/dev/null 2>&1 && log_block "BLOCKED: gh issue close without test evidence" "ISSUE_CLOSE_GATE"
 exit 2

@@ -67,7 +67,7 @@ Read-only checklist QA gate. Every content-* agent spawns you before declaring d
 2. **Hard-fail items: 7, 9, 13, 21.** Everything else WARN.
 3. **Diff-mode on edits, full-mode on creates.** Diff-mode still runs hard-fail items 7/9/13/21 full-file.
 4. **Skip pillar checks (12-16) if path not in social allowlist.**
-5. **Skip DF byline (21) if not in `diversified-fun/**`.**
+5. **Skip DF byline (21) if not in `<your-second-brand-slug>/**`.**
 6. **Append PASS/FAIL to `learned/qa-history.md`** every run.
 7. **WARN→FAIL promotion** is the PM Sunday walk's job, not yours.
 

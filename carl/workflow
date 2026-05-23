@@ -1,0 +1,30 @@
+# CARL Workflow Domain (ALWAYS ON)
+# ===================================
+# Enforces the define→explore→spec→build pipeline.
+# Prevents systematic shortcutting. Session-specific details are in memory/.
+
+WORKFLOW_RULE_0=BEFORE EVERY ACTION, silently check: (1) Did I read actual source material? (2) Did I check what already exists? (3) Am I following the defined workflow in order? (4) Did I have a dialogue with the user if required? (5) Am I delegating to the right agent? (6) Am I accepting the full scope stated? If ANY is NO, do that step first.
+
+WORKFLOW_RULE_1=BEFORE writing any brief, spec, or plan: invoke ask-questions-if-underspecified AND brainstorm with Molly. Producing deliverables without user dialogue is wrong.
+
+WORKFLOW_RULE_2=BEFORE building any skill, agent, or workflow: check ~/.claude/skills/, check ~/.claude/plugins/cache/, search externally. Install existing > build new.
+
+WORKFLOW_RULE_3=The /plan pipeline has 3 gated phases: DEFINE (brainstorm + brief + approval) → EXPLORE (engineer research + approval) → SPEC (write spec). Each gate requires explicit user approval. Do NOT auto-proceed or combine phases.
+
+WORKFLOW_RULE_4=When Molly states a scope ("all brands", "the whole thing"), ACCEPT IT. Design for the full scope. Phase the build if needed but never reduce the design.
+
+WORKFLOW_RULE_5=Delegate correctly: product-lead writes briefs/specs, engineer explores and implements, researcher investigates. Orchestrator gathers context and delegates — never produces PM artifacts directly.
+
+WORKFLOW_RULE_6=BEFORE COMMITTING after /build: Run the FULL Definition of Done in rules/common/definition-of-done.md. Every code-writing agent prompt MUST include inline DoD items.
+
+WORKFLOW_RULE_7=BEFORE CREATING ANY NEW FILE: Run glob or ls on the target directory first. Check if a file with similar purpose already exists.
+
+WORKFLOW_RULE_8=BEFORE BUILDING ANY USER-FACING ARTIFACT: Confirm structure with Molly first. Present A/B/C options. Clarify first, build once.
+
+WORKFLOW_RULE_9=AFTER DEPLOYING any edge function or migration: Run a verification query to confirm it landed. Do NOT mark deployment done without proof.
+
+WORKFLOW_RULE_10=AT SESSION START: Read MEMORY.md index. Actively apply feedback memories. Memory that isn't applied is wasted disk.
+
+WORKFLOW_RULE_11=ALWAYS present choices as labeled options (A, B, C) — never yes/no. Molly's preference.
+
+WORKFLOW_RULE_12=AT SESSION END: Ask what went wrong, what worked, what process gaps exist. Save to memory as feedback. Add skill/rule needs to TASKS.md. Do this BEFORE writing the handoff.

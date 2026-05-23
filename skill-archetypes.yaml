@@ -1,0 +1,116 @@
+# ~/.claude/skill-archetypes.yaml — skill name → archetype tags (manual, opinionated)
+#
+# Phase 7.1 — seeded 2026-05-20 from real-usage data (45 invocations / 20 unique skills
+# mined from 30 transcripts) PLUS "Bucket B" archetype-relevant skills the user currently
+# forgets to invoke (carl-manager, ui-ux-pro-max, copywriting, mental-models, etc.).
+#
+# Vocabulary (same as projects.yaml):
+#   web-app | telegram-bot | content-pipeline | python-cli |
+#   video-pipeline | infra-config | brand-content | always-on
+#
+# Resolution: a skill fires for the active archetype if its archetype list contains
+# the archetype OR "always-on". Capped at 10 per archetype block at render time.
+#
+# Format: "<skill-name>": [archetype1, archetype2, ...]
+# - Personal skills: bare name (e.g. "brand-voice-router")
+# - Plugin skills:   full prefixed name (e.g. "superpowers:brainstorming")
+#
+# To re-bootstrap from installed skills:
+#   python3 ~/.claude/scripts/bootstrap-skill-archetypes.py > /tmp/draft.yaml 2>/tmp/unmapped.txt
+# To validate:
+#   bash ~/.claude/scripts/validate-skill-archetypes.sh
+
+# ============================================================
+# === Personal skills (~/.claude/skills/) ===
+# ============================================================
+
+# Always-on (universal utility — fire for every archetype)
+"handoff": [always-on]
+"mental-models": [always-on]
+"decision-maker": [always-on]
+"devils-advocate": [always-on]
+"self-interview": [always-on]
+"ask-me-the-questions": [always-on]
+
+# Brand-content (writing, voice, content production)
+"brand-voice-router": [brand-content, always-on]
+"humanize-ai-writing": [brand-content, always-on]
+"voice-extractor": [brand-content]
+"copywriting": [brand-content, web-app]
+"direct-response-copy": [brand-content, web-app]
+"content-strategy": [brand-content]
+"social-content": [brand-content]
+"hooks": [brand-content, content-pipeline]
+"carousel-writer": [brand-content, content-pipeline]
+"content-atomizer": [brand-content, content-pipeline]
+"repurpose": [brand-content, content-pipeline]
+"video-script": [brand-content, video-pipeline]
+"youtube-scriptwriting": [brand-content, video-pipeline]
+"blitzreels-carousels-tiktok": [brand-content, video-pipeline]
+"seo-audit": [brand-content, web-app]
+"keyword-research": [brand-content, web-app]
+"email-sequence": [brand-content, content-pipeline]
+"marketing-psychology": [brand-content]
+"followability-audit": [brand-content, infra-config]
+
+# Infra / config (Claude Code itself, hooks, CARL, settings)
+"carl-manager": [infra-config]
+"carl-help": [infra-config]
+
+# Dev / utility tools
+"nano-banana": [web-app, brand-content]
+"firecrawl": [web-app, content-pipeline, infra-config]
+"code-documenter": [web-app, python-cli]
+"resume-rebuilder": [brand-content]
+
+# ============================================================
+# === Plugin skills ===
+# ============================================================
+
+# Superpowers (process discipline — always-on across projects)
+"superpowers:brainstorming": [always-on]
+"superpowers:writing-plans": [always-on]
+"superpowers:subagent-driven-development": [always-on]
+"superpowers:executing-plans": [always-on]
+"superpowers:test-driven-development": [always-on]
+"superpowers:systematic-debugging": [always-on]
+"superpowers:verification-before-completion": [always-on]
+"superpowers:dispatching-parallel-agents": [always-on]
+"superpowers:finishing-a-development-branch": [always-on]
+"superpowers:requesting-code-review": [always-on]
+"superpowers:receiving-code-review": [always-on]
+
+# Web-app (frontend, backend, infrastructure)
+"frontend-design:frontend-design": [web-app]
+"ui-ux-pro-max:ui-ux-pro-max": [web-app]
+"supabase:supabase": [web-app]
+"supabase:supabase-postgres-best-practices": [web-app]
+"everything-claude-code:postgres-patterns": [web-app]
+"everything-claude-code:frontend-patterns": [web-app]
+"everything-claude-code:api-design": [web-app]
+"everything-claude-code:backend-patterns": [web-app]
+"everything-claude-code:e2e-testing": [web-app]
+"everything-claude-code:deployment-patterns": [web-app, content-pipeline]
+
+# Python / Django
+"everything-claude-code:python-patterns": [python-cli, web-app]
+"everything-claude-code:python-testing": [python-cli]
+"everything-claude-code:django-patterns": [python-cli]
+"everything-claude-code:django-tdd": [python-cli]
+
+# Infra-config
+"claude-code-setup:claude-automation-recommender": [infra-config]
+"skill-improver:skill-improver": [infra-config]
+"workflow-skill-design:designing-workflow-skills": [infra-config]
+"compound-engineering:create-agent-skills": [infra-config]
+"compound-engineering:context7": [always-on]
+"context7:context7": [always-on]
+"everything-claude-code:docker-patterns": [infra-config, web-app]
+"everything-claude-code:security-scan": [infra-config]
+
+# Content + brand (plugins)
+"compound-engineering:gemini-imagegen": [brand-content]
+"compound-engineering:every-style-editor": [brand-content]
+"compound-engineering:rclone": [content-pipeline]
+"compound-engineering:frontend-design": [web-app]
+"compound-engineering:agent-browser": [web-app, content-pipeline]

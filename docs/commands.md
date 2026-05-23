@@ -1,6 +1,6 @@
 # Slash Commands Reference
 
-18 commands. Each is a `~/.claude/commands/<name>.md` file whose body becomes the prompt when typed.
+27 commands. Each is a `~/.claude/commands/<name>.md` file whose body becomes the prompt when typed.
 
 ## Workflow modes
 
@@ -10,7 +10,7 @@ The big-five — pick one based on scope:
 |---|---|---|
 | `/fix` | Bugs, small changes | No spec, no review pipeline. Just fix. |
 | `/build [feature]` | Standard feature | Lightweight spec → 3-5 agents → auto-proceed |
-| `/ship [feature]` | Major feature | **Memory-aware v2.** 11-stage pipeline: pre-flight (memory-keeper loads tagged patterns) → existing 9-agent flow → Stage 9 Deploy+Smoke (hook-gated: 3-deploy rule, observability, smoke) → capture (memory-keeper drafts feedback). v1 vertical slice. See `docs/ship-pipeline-v2.md`. |
+| `/ship [feature]` | Any code work | **Smart v3 (Phase 8.0).** Stage 0 calls Haiku 4.5 to pick S/M/L/XL; only the stages that fit run. Each stage explicitly invokes a [superpowers](https://github.com/obra/superpowers) skill (brainstorming, tdd, verification-before-completion, requesting-code-review, finishing-a-development-branch). S = tdd + smoke only; M = +preflight+brainstorm+spec+impl+review+capture; L = +designer+research+subagent-driven-development; XL = +ADR+double memory-keeper. See `docs/ship-pipeline-v2.md`. |
 | `/write` | Copy / docs / book chapters / brand content | Loads writing skills + brand voice |
 | `/escalate-to [mode]` | Mid-flight | Mode transition when current mode isn't enough — escalates without losing work |
 
@@ -37,16 +37,33 @@ The big-five — pick one based on scope:
 | `/init-project` | Bootstrap a new project with proper Claude Code config (CLAUDE.md template, rules, etc.) |
 | `/handoff` | Save current session state for continuity (skill: `handoff`) |
 | `/learn` | Save learnings from this session to long-term memory |
+| `/promote` | Promote a project-local feedback memory file into a cross-project learned pattern |
 | `/deploy` | Deploy the current project |
-| `/sync-notion` | Sync GitHub docs + session progress to a Notion wiki |
+
+## Skill catalog + bake-off
+
+| Command | What |
+|---|---|
+| `/skills "what you want to do"` | Semantic search over ~600 installed skills (Phase 7.2). Pre-filter by archetype + keyword grep, then top-5 with rationale. |
+| `/bake-off "query"` | Tournament-test 3 candidate skills on the same task (`--yolo` = 1 untested skill self-rate; `--control` = known-good vs yolo). Phase 7.3. |
+| `/consolidate-skills` | One-shot static analysis to find duplicate skills. Composite score = description Jaccard + body-token Jaccard + bake-off shared losses + elimination flag. Adds LLM-judge for ambiguity-band pairs (Phase 7.7a). |
+| `/merge-skills <pathA> <pathB>` | Sonnet synthesizes a merged draft to `_drafts/` (Phase 7.7a.4). |
+
+## Pipeline observability
+
+| Command | What |
+|---|---|
+| `/system-retro` | One-shot retrospective over last 20 sessions. Haiku judge scores 4 dimensions + primary_gap + process_pattern. Synthesis judge finds cross-cutting themes (Phase 7.7c). |
+| `/ship-preflight` | Probe external dependencies (CLI commands, env vars, files, URLs) before `/ship` commits. |
+| `/ship-scope-replay` | Re-classify recent sessions' first user prompts through Stage 0 — useful for calibration. |
+| `/ship-skill-status` | Report which superpowers skills fired in the current `/ship` run vs which were expected per scope (Phase 8.1, advisory). |
+| `/update-plugins` | Scan installed plugins via `git ls-remote` for upstream drift; prompt to update (Phase 7.7b). |
 
 ## Specialty
 
 | Command | What |
 |---|---|
-| `/canva-carousel` | Generate IG carousel via Canva template + QA + auto-fix |
 | `/video-story [concept]` | AI-generated videos with character consistency + storytelling craft |
-| `/unstuck [phase]` | Run the Unstuck Coach — modular coaching for side-project shippers (`diagnose|audit|scope|validate|sprint|launch|roadmap|full`) |
 | `/new-project-template` | Drops a CLAUDE.md template for a new project |
 
 ## How modes auto-proceed

@@ -1,0 +1,2 @@
+remote get-url origin|https://example.invalid/alpha.git||0|0
+ls-remote origin HEAD||fatal: unable to access 'https://example.invalid/alpha.git/': Could not resolve host|128|0

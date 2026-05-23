@@ -13,8 +13,13 @@
 # Exits: always 0. Non-zero would be treated as hook error by Claude Code.
 #
 # See spec: docs/superpowers/specs/2026-05-10-ship-pipeline-v2-design.md §9
+# Kill switch: SHIP_PHASE_GATE=off → exit 0 immediately (no-op).
 
 set -euo pipefail
+
+if [ "${SHIP_PHASE_GATE:-on}" = "off" ]; then
+  exit 0
+fi
 
 readonly MAX_ANCESTOR_LEVELS=4
 readonly DEPLOY_RULE_THRESHOLD=3

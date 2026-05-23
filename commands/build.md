@@ -3,6 +3,12 @@ Standard feature mode — lightweight spec, 3-5 agents, auto-proceed.
 Usage: /build [feature description or TASKS.md reference]
 
 Flow:
+0. **Pre-flight — query MemPalace (NEW Phase 3):**
+   - `mcp__mempalace__mempalace_search` for the feature topic + active-project wing
+   - Wing-filter fail-open: retry without filter if `Error finding id` (see `feedback_mempalace_wing_filter_error_finding_id.md`)
+   - Look for: similar features already shipped, related ADRs, prior implementation gotchas, deferred TODOs that touch this area
+   - Surface 3-5 drawers to the user: "I found prior work on this at [paths]. Extending or fresh?"
+   - Skip ONLY if /build target is a one-line trivial fix (typo, copy edit) — otherwise always query
 1. @product-lead writes lightweight 1-page spec (30 min max): user story + acceptance criteria + test plan
 2. @designer creates design spec (if UI — skip if backend-only)
 3. @engineer implements with TDD, uses subagent-driven-development for 3+ subtasks

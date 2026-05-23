@@ -7,6 +7,7 @@ projects: [all]
 severity: blocking
 phase: [verify, capture]
 last-validated: 2026-05-12
+archetypes: [always-on]
 ---
 
 # Pattern: Documentation After Build
@@ -29,6 +30,23 @@ Three failures on the security-hardening build (2026-03-26):
 
 ## Key principle
 "Ready to commit" means docs are updated. Not "code works, docs later."
+
+## Cross-surface sweep when product attributes change
+
+When a product attribute changes (price, module count, name, included/excluded features), grep ALL doc surfaces before considering the change done. Old planning docs become liability the moment the product evolves.
+
+Surfaces to sweep:
+- welcome.md, gumroad-deliverables.md, gumroad-product-spec.md
+- Landing pages (HTML/TSX), JSON-LD blocks, llms.txt
+- Email templates (Resend), Notion product templates
+- README.md, CLAUDE.md, brand PDFs, sales decks
+- The marketing site for that brand (separate repo)
+
+Single canonical source pattern: keep `product-ladder.yml` (or equivalent) as the one place truth lives, then grep the canonical key from there to verify each surface matches. Stale "Module 0/1/2" counts in welcome.md after restructuring caused 3 different "what's included" answers in the same product week (<your-web-app-1> 2026-05-13/14).
+
+## Markdown-canonical pipeline for branded PDFs
+
+When a PDF + a webpage describe the same product, the markdown content file is the canonical source. Edit `.md` → regenerate `.pdf` via the build script. Never edit the PDF directly (ReportLab regeneration will overwrite). The webpage reads the SAME `.md` via fetch. One edit, two surfaces in sync.
 
 ## Enforcement
 - rules/common/definition-of-done.md (full checklist with doc mapping)

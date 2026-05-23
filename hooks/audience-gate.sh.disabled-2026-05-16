@@ -1,0 +1,102 @@
+#!/bin/bash
+# audience-gate.sh — PreToolUse hook (matcher: Write|Edit)
+# Blocks Write/Edit on deliverables until audience is recorded for the
+# (project, deliverable-type) pair. State is project-scoped and persistent —
+# session_id is NOT used (harness rotates session_id per tool call, which
+# broke the previous design).
+# Spec: docs/superpowers/specs/2026-05-15-claude-setup-enforcement-gates-design.md
+# v1.1 (2026-05-16): project-scoped persistent state + tooling-path exclusions
+
+# Kill switch
+[ "${AUDIENCE_GATE:-on}" = "off" ] && exit 0
+
+INPUT=$(cat 2>/dev/null)
+TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // ""' 2>/dev/null)
+
+# Only Write/Edit
+case "$TOOL_NAME" in
+  Write|Edit) ;;
+  *) exit 0 ;;
+esac
+
+FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // ""' 2>/dev/null)
+
+# Path exclusions — internal/tooling files, not external deliverables
+case "$FILE_PATH" in
+  */.claude/*|*/docs/decisions/*|*/docs/superpowers/*|*/tests/*|*/scripts/*|*/hooks/*) exit 0 ;;
+  */prompts/*|*/reflection/*|*/_internal/*|*/.cache/*|*/node_modules/*) exit 0 ;;
+  */HANDOFF.md|*/TASKS.md|*/CLAUDE.md|*/MEMORY.md|*/README.md|*/CHANGELOG.md) exit 0 ;;
+  *-prompt.md|*_prompt.md|*-template.md|*.tmpl.md|*-tmpl.md) exit 0 ;;
+  *.json|*.yaml|*.yml|*.toml|*.sh|*.ts|*.tsx|*.js|*.jsx|*.py|*.sql|*.lock) exit 0 ;;
+  *.env|*.env.*) exit 0 ;;
+esac
+
+# Keyword trigger from last_prompt
+LAST_PROMPT_FILE="$HOME/.claude/checkpoints/last_prompt"
+[ -f "$LAST_PROMPT_FILE" ] || exit 0
+LAST_PROMPT_LOWER=$(tr '[:upper:]' '[:lower:]' < "$LAST_PROMPT_FILE")
+
+# Specific artifact-nouns first, generic action-verbs last (first-match wins)
+KEYWORD_HIT=""
+for kw in carousel reel caption "lead magnet" landing chapter essay article newsletter blog medium substack book ebook playbook proposal pitch page post email write draft; do
+  if [[ "$LAST_PROMPT_LOWER" == *"$kw"* ]]; then KEYWORD_HIT="$kw"; break; fi
+done
+[ -z "$KEYWORD_HIT" ] && exit 0
+
+# Derive project root: git toplevel basename, else ~/github/<x>, else dir basename
+get_project_root() {
+  local path="$1"
+  local git_root
+  git_root=$(cd "$(dirname "$path")" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null)
+  if [ -n "$git_root" ]; then
+    basename "$git_root"
+    return
+  fi
+  if [[ "$path" == "$HOME/github/"* ]]; then
+    echo "${path#$HOME/github/}" | cut -d/ -f1
+    return
+  fi
+  basename "$(dirname "$path")"
+}
+
+PROJECT_ROOT=$(get_project_root "$FILE_PATH")
+KEYWORD_SLUG=$(echo "$KEYWORD_HIT" | tr ' ' '_')
+KEY="${PROJECT_ROOT}_${KEYWORD_SLUG}"
+
+# State check — single project-scoped file, no session_id
+STATE_FILE="$HOME/.claude/state/audience.json"
+mkdir -p "$HOME/.claude/state"
+if [ -f "$STATE_FILE" ]; then
+  EXISTING=$(jq -r --arg k "$KEY" '.[$k].audience // ""' "$STATE_FILE" 2>/dev/null)
+  [ -n "$EXISTING" ] && exit 0
+fi
+
+# Log the fire
+mkdir -p "$HOME/.claude/logs"
+echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") BLOCK key=$KEY file=$FILE_PATH kw=$KEYWORD_HIT" >> "$HOME/.claude/logs/audience-gate.log"
+
+# Block
+cat >&2 <<EOF
+⚠️  AUDIENCE GATE: About to write/edit a deliverable in project "$PROJECT_ROOT"
+(type: $KEYWORD_HIT) but no audience has been recorded for this pair.
+
+Before this Write/Edit, call AskUserQuestion with options drawn from:
+  - Unstuck with Molly (build-partnership audience)
+  - Outli.ne (visual creators)
+  - Diversified Fun (consulting clients with David)
+  - @mollybought (personal lifestyle)
+  - Molly Direct / LinkedIn (tech leaders)
+  - The Flamingo Effect (book readers)
+  - Internal / project-specific — describe the user
+
+After Molly answers, run:
+  ~/.claude/scripts/record-audience.sh "$KEY" "<chosen audience>"
+
+State is project-scoped and PERSISTENT — once recorded, applies forever
+until cleared. To reset:
+  ~/.claude/scripts/record-audience.sh "$KEY" ""
+
+Source: feedback_ask_audience_before_designing.md
+Kill switch (this session): export AUDIENCE_GATE=off
+EOF
+exit 2

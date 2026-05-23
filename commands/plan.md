@@ -2,11 +2,23 @@ Launch the full define → explore → spec pipeline.
 
 Usage: /plan [feature or problem description]
 
-## STEP 0: MANDATORY CHECKLIST (do this FIRST, before anything else)
+## STEP 0: Pre-flight — query MemPalace for prior context (NEW Phase 3)
+
+Before the mandatory checklist below, the orchestrator queries MemPalace at the command level so context flows DOWN into product-lead, engineer, and any agent spawned:
+
+1. `mcp__mempalace__mempalace_search` for the topic + active-project wing if detectable from cwd
+2. **Wing-filter fail-open:** if `Error finding id`, retry without the wing filter (see `feedback_mempalace_wing_filter_error_finding_id.md`)
+3. Surface the 3-5 most-relevant drawers to the user BEFORE Phase 1a: "I found prior briefs / decisions on this topic at [paths]. Should I extend or start fresh?"
+4. If the user says extend: lead Phase 1a with the prior context loaded; product-lead's `ask-questions-if-underspecified` will be more focused
+5. If the user says fresh: log that decision so memory-keeper Stage 11 captures the divergence
+6. Skip Step 0 for trivial /plan calls (rare; /plan usually warrants the query)
+
+## STEP 1: MANDATORY CHECKLIST (do this AFTER pre-flight)
 
 Create a TodoWrite checklist with these items. Do NOT skip any step. Check each off as you complete it.
 
 ```
+- [ ] Step 0: Pre-flight MemPalace query (above) — done
 - [ ] Phase 1a: Ask clarifying questions (invoke ask-questions-if-underspecified)
 - [ ] Phase 1b: Brainstorm with user (invoke compound-engineering:workflows:brainstorm OR brainstorm skill — have a DIALOGUE, don't just produce output)
 - [ ] Phase 1c: Write product brief (problem, landscape, hypothesis, metrics, risks)
@@ -64,6 +76,6 @@ Then hand off to /build or /ship for implementation.
 
 ```
 /plan creative team agent system          → all 3 phases (new system)
-/plan add email sequences to Unstuck      → Phase 1 + 2 + 3 (new capability)
+/plan add email sequences to <your-first-brand>      → Phase 1 + 2 + 3 (new capability)
 /plan fix the intake form validation      → skip to /build (small fix, no brief needed)
 ```

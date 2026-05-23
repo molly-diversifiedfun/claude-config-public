@@ -3,9 +3,20 @@
 # Blocks session end if DoD items are incomplete.
 # Checks: HANDOFF.md, TASKS.md, learnings, enforcement, tests, docs.
 # Outputs JSON: {} to allow, {"decision":"block","reason":"..."} to block.
+# Kill switch: RETROSPECTIVE_GATE=off → exit 0 with {} (no-op).
+# (CHECK 8 synthesis cadence has its own SYNTHESIS_GATE=off; this gate
+#  short-circuits the whole hook.)
+
+if [ "${RETROSPECTIVE_GATE:-on}" = "off" ]; then
+  echo '{}'
+  exit 0
+fi
 
 COUNTER_FILE="$HOME/.claude/checkpoints/.tool_count"
 ACTIVITY_LOG="$HOME/.claude/checkpoints/activity.jsonl"
+
+# Shared block logger (no-op if lib missing)
+source "$HOME/.claude/hooks/lib/log-block.sh" 2>/dev/null || true
 
 # Ancestor-walk to find PROJECT_ROOT: nearest dir with BOTH HANDOFF.md AND a
 # configured memory dir under ~/.claude/projects/. Falls back to git root, then PWD.
@@ -169,10 +180,72 @@ if [ -f "$ACTIVITY_LOG" ]; then
 fi
 
 # ============================================================
+# CHECK 8: Synthesis cadence (Phase 6.1)
+# ============================================================
+# Block when accumulated feedback drift crosses a threshold without learned/
+# synthesis. Threshold: ≥10 new feedback files since newest learned/*.md
+# (excluding SKILL.md) OR ≥7 days since newest learned/*.md mtime.
+#
+# Kill switch: SYNTHESIS_GATE=off claude
+#
+# Filesystem-only — no MCP call (Stop hook must stay <1s + work offline).
+# Fail-open on any sub-step error: accept that drift goes unblocked for
+# this session rather than block on a hook bug.
+if [[ "${SYNTHESIS_GATE:-on}" != "off" ]]; then
+  LEARNED_DIR_S="$HOME/.claude/skills/learned"
+  MEMORY_DIRS_S=(
+    "$HOME/.claude/projects/<your-workspace>/memory"
+    "$HOME/.claude/projects/<your-content-workspace>/memory"
+    "$HOME/.claude/projects/<your-content-workspace-2>/memory"
+    "$HOME/.claude/projects/<your-product-workspace>/memory"
+    "$HOME/.claude/projects/<your-workspace>-<your-project-2>/memory"
+    "$HOME/.claude/projects/<your-side-project>/memory"
+    "$HOME/.claude/projects/<your-saas-project>/memory"
+  )
+
+  # Newest learned/*.md mtime, excluding SKILL.md
+  NEWEST_LEARNED_S=0
+  if [ -d "$LEARNED_DIR_S" ]; then
+    for f in "$LEARNED_DIR_S"/*.md; do
+      [ -f "$f" ] || continue
+      [ "$(basename "$f")" = "SKILL.md" ] && continue
+      TS=$(stat -f '%m' "$f" 2>/dev/null || stat -c '%Y' "$f" 2>/dev/null || echo "0")
+      [ "$TS" -gt "$NEWEST_LEARNED_S" ] && NEWEST_LEARNED_S=$TS
+    done
+  fi
+
+  # Count feedback files newer than newest learned/
+  NEW_FEEDBACK_S=0
+  for dir in "${MEMORY_DIRS_S[@]}"; do
+    [ -d "$dir" ] || continue
+    for f in "$dir"/feedback_*.md; do
+      [ -f "$f" ] || continue
+      TS=$(stat -f '%m' "$f" 2>/dev/null || stat -c '%Y' "$f" 2>/dev/null || echo "0")
+      [ "$TS" -gt "$NEWEST_LEARNED_S" ] && NEW_FEEDBACK_S=$((NEW_FEEDBACK_S + 1))
+    done
+  done
+
+  # Days since newest learned/
+  NOW_S=$(date +%s)
+  if [ "$NEWEST_LEARNED_S" -gt 0 ]; then
+    DAYS_SINCE_S=$(( (NOW_S - NEWEST_LEARNED_S) / 86400 ))
+  else
+    DAYS_SINCE_S=999
+  fi
+
+  # Trip either threshold
+  if [ "$NEW_FEEDBACK_S" -ge 10 ] || [ "$DAYS_SINCE_S" -ge 7 ]; then
+    NEWEST_DATE_S=$(date -r "$NEWEST_LEARNED_S" +%Y-%m-%d 2>/dev/null || echo "unknown")
+    REASONS="${REASONS}Synthesis overdue: ${NEW_FEEDBACK_S} new feedback files since ${NEWEST_DATE_S} (${DAYS_SINCE_S}d). Run /promote to triage. Kill switch: SYNTHESIS_GATE=off claude. "
+  fi
+fi
+
+# ============================================================
 # DECISION
 # ============================================================
 if [ -n "$REASONS" ]; then
   REASONS_ESCAPED=$(echo "$REASONS" | sed 's/"/\\"/g')
+  type log_block >/dev/null 2>&1 && log_block "Stop hook block: DoD INCOMPLETE: $REASONS" ""
   echo "{\"decision\":\"block\",\"reason\":\"DoD INCOMPLETE: ${REASONS_ESCAPED}Walk the Definition of Done (rules/common/definition-of-done.md) before ending session.\"}"
   exit 0
 fi

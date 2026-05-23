@@ -12,7 +12,7 @@ The auto-injection mechanism is **CARL** — a UserPromptSubmit hook (`hooks/car
 | `python/` | Python-specific style rules | When user is working in Python |
 | `typescript/` | TypeScript-specific style rules | When user is working in TS |
 
-> Note: the original private config carried a fourth `content-system/` domain with brand-specific content production rules (caption-generation-enforcement, content-plan-enforcement). It was stripped from this public snapshot. If you have a content production pipeline, add your own `content-system/` rules and register the domain in `hooks/carl-loader.sh`.
+> Note: the original private config carried a fourth `<your-content-pipeline>/` domain with brand-specific content production rules (caption-generation-enforcement, content-plan-enforcement). It was stripped from this public snapshot. If you have a content production pipeline, add your own `<your-content-pipeline>/` rules and register the domain in `hooks/carl-loader.sh`.
 
 ## What's in `common/`
 
@@ -35,7 +35,7 @@ The auto-injection mechanism is **CARL** — a UserPromptSubmit hook (`hooks/car
 2. Scans the user's prompt for triggers:
    - File extensions (`.py` → python rules; `.ts`/`.tsx` → typescript rules)
    - Star-commands (`*dev` → development rules; `*review` → review rules; `*brief` → brief writing rules)
-   - Topic keywords (e.g., the private config had "caption" → content-system rules; you can register your own)
+   - Topic keywords (e.g., the private config had "caption" → <your-content-pipeline> rules; you can register your own)
 3. Matches CLAUDE.md "RIGOR" triggers (settings.json, schema, manifest, hooks, plugins, MCP) → loads stricter validation rules
 4. Concatenates the matched rule files into a system context block
 
@@ -48,7 +48,7 @@ CARL recognizes star-prefixed words as load-domain triggers:
 - `*dev` → loads dev domain rules
 - `*review` → loads review domain rules
 - `*brief` → loads brief writing rules
-- `*content` → was a content-system trigger in the private config; not active in this public snapshot (no content-system rules ship here)
+- `*content` → was a <your-content-pipeline> trigger in the private config; not active in this public snapshot (no <your-content-pipeline> rules ship here)
 
 Use them by prefixing your message: "*dev help me refactor the auth flow" → CARL loads the dev rule set.
 

@@ -150,7 +150,7 @@ We will use PostgreSQL 14+ as our primary database.
 PostgreSQL provides:
 1. **ACID transactions:** Critical for billing and payment operations
 2. **Rich query capabilities:** Complex JOINs and aggregations for analytics
-3. **Row-level security:** Native multi-tenancy support
+3. **Row-level security:** Native multi-te<your-bot> support
 4. **JSON support:** Flexible schema for tenant-specific data
 5. **Mature ecosystem:** Well-understood, excellent tooling
 6. **Battle-tested:** Proven at scale in similar applications
@@ -160,7 +160,7 @@ PostgreSQL provides:
 ### Positive
 - Strong consistency guarantees for financial data
 - Rich querying eliminates need for separate analytics database
-- Native multi-tenancy features simplify tenant isolation
+- Native multi-te<your-bot> features simplify tenant isolation
 - Extensive PostgreSQL expertise in team
 
 ### Negative
@@ -201,11 +201,11 @@ PostgreSQL provides:
 - No row-level security
 - Less powerful query optimizer
 
-**Why not chosen:** PostgreSQL's row-level security and JSON support are valuable for multi-tenancy. Small operational simplicity gain doesn't outweigh these features.
+**Why not chosen:** PostgreSQL's row-level security and JSON support are valuable for multi-te<your-bot>. Small operational simplicity gain doesn't outweigh these features.
 
 ## References
 
-- [PostgreSQL Multi-tenancy Guide](https://example.com/pg-multitenancy)
+- [PostgreSQL Multi-te<your-bot> Guide](https://example.com/pg-multite<your-bot>)
 - [Benchmark: Postgres vs MySQL vs MongoDB](https://example.com/benchmark)
 - Team discussion thread: [Slack link]
 ```

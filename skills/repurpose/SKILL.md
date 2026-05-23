@@ -13,7 +13,7 @@ allowed-tools: Read Write Edit Grep Glob
 ---
 
 <!-- Auto-inject brand config if available -->
-Brand config: !`cat unstuck/brand-config.json 2>/dev/null || echo "No brand config found — using defaults"`
+Brand config: !`cat <your-first-brand-slug>/brand-config.json 2>/dev/null || echo "No brand config found — using defaults"`
 
 # Repurpose — Brand Voice Content Derivatives
 
@@ -23,9 +23,9 @@ Turn one pillar piece into 6 platform-ready derivatives, all matching brand voic
 
 **Step 1: Load brand context.** Read these files:
 
-1. **Voice DNA**: `content-system/{brand}/{brand}-voice-dna.md`
+1. **Voice DNA**: `<your-content-pipeline>/{brand}/{brand}-voice-dna.md`
 2. **Brand rules**: `.claude/rules/brands/{brand}.md`
-3. **Content strategy** (if exists): `content-system/{brand}/strategy.md`
+3. **Content strategy** (if exists): `<your-content-pipeline>/{brand}/strategy.md`
 
 If Voice DNA doesn't exist, stop and tell the user to run `voice-extractor` first.
 
@@ -252,13 +252,13 @@ Before delivering, verify:
 ## Input
 
 1. **Source content** — URL, file path, or pasted text
-2. **Brand** — which brand (default: unstuck)
+2. **Brand** — which brand (default: <your-first-brand-slug>)
 3. **Target formats** (optional) — can request subset (e.g., "just Reels" or "just carousels")
 4. **Calendar context** (optional) — which pillar/date this is for
 
 ## Output
 
-Save all derivatives to: `content-system/{brand}/content/YYYY-MM/repurpose-[slug].md`
+Save all derivatives to: `<your-content-pipeline>/{brand}/content/YYYY-MM/repurpose-[slug].md`
 
 Include metadata at the top:
 ```markdown

@@ -1,0 +1,54 @@
+{
+  "version": 2,
+  "plugins": {
+    "alpha@marketplace-a": [
+      {
+        "scope": "user",
+        "installPath": "FIXTURE_DIR/cache/alpha",
+        "version": "1.0.0",
+        "installedAt": "2026-05-01T00:00:00.000Z",
+        "lastUpdated": "2026-05-01T00:00:00.000Z",
+        "gitCommitSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ],
+    "beta@marketplace-b": [
+      {
+        "scope": "user",
+        "installPath": "FIXTURE_DIR/cache/beta",
+        "version": "2.0.0",
+        "installedAt": "2026-05-01T00:00:00.000Z",
+        "lastUpdated": "2026-05-01T00:00:00.000Z",
+        "gitCommitSha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      {
+        "scope": "project",
+        "projectPath": "/Users/whoever",
+        "installPath": "FIXTURE_DIR/cache/beta",
+        "version": "2.0.0",
+        "installedAt": "2026-05-01T00:00:00.000Z",
+        "lastUpdated": "2026-05-01T00:00:00.000Z",
+        "gitCommitSha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+    ],
+    "orphan@marketplace-c": [
+      {
+        "scope": "user",
+        "installPath": "FIXTURE_DIR/cache/does-not-exist",
+        "version": "1.0.0",
+        "installedAt": "2026-05-01T00:00:00.000Z",
+        "lastUpdated": "2026-05-01T00:00:00.000Z",
+        "gitCommitSha": "cccccccccccccccccccccccccccccccccccccccc"
+      }
+    ],
+    "gamma@marketplace-d": [
+      {
+        "scope": "user",
+        "installPath": "FIXTURE_DIR/cache/gamma",
+        "version": "1.0.0",
+        "installedAt": "2026-05-01T00:00:00.000Z",
+        "lastUpdated": "2026-05-01T00:00:00.000Z",
+        "gitCommitSha": "dddddddddddddddddddddddddddddddddddddddd"
+      }
+    ]
+  }
+}

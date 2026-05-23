@@ -7,46 +7,55 @@ projects: [all]
 severity: blocking
 phase: [define, explore, build, review, deploy, capture]
 trigger: [stat-without-source, story-without-evidence, made-up-metric]
-last-validated: 2026-05-12
+last-validated: 2026-05-10
+archetypes: [always-on]
 ---
 
 # Pattern: Never Fabricate Personal Details
 
-A previous session invented a story about a $2,400 product launch and propagated it across 20 files. The real story was a $21 product with 3 sales. The fabricated version was more flattering and would have been catastrophic if shipped publicly.
+A previous session invented "$2,400 PDF on Gumroad" and propagated it across 20 files. Real story: $21 PDF, 3 sales.
 
-This is one of the most common failure modes when an LLM is writing in someone's voice: it will invent plausible-sounding numbers, projects, milestones, and revenue figures that sound impressive. None of them are real.
+## What's confirmed real:
+- <your unlaunched-thing example> Shopify store, 4 years, $1,392 in fees, never launched
+- $21 PDF on Gumroad, 4-module fillable worksheets, 3 sales from strangers
+- BurnFriends: first big ship, 200 users in 6 weeks
+- GiftShopper: your OWN project (not a client), shipped in 6 weeks
+- Senior Director at Heap/Contentsquare, promoted 2026, 20+ years in tech
+- Career: Google → SoftBank → Neustar → Andela → Heap → Contentsquare
+- $5M migration recovery + $2M annual savings (Heap story specifically)
+- <your signature project> for <your specific public stories>
 
-## The rule
+## What's confirmed fabricated (never use):
+- "Planned a video course for a year" — never happened
+- "Recorded a podcast, 2 episodes" — never happened
+- "Made a 47-slide course" — never happened
+- "Mom bought it with two email addresses" — her mom is dead
+- GiftShopper framed as a "client" story — it's your project
 
-**When writing content referencing your experiences, ASK for real details before writing.** Small real numbers ($21 PDF, 3 sales) > fake impressive ones ($2,400 PDF, 47 sales). The audience can smell fabrication; the LLM cannot.
+## Rule
+When writing content referencing your experiences, ASK for real details. Small real numbers ($21 PDF, 3 sales) > fake impressive ones.
 
-## How to apply
+## Sub-rule: Case studies are NEVER fabricated
 
-Maintain a "confirmed real" / "confirmed fabricated" list in your private memory directory (an example template is shown below — fill in with your own data). Reference it before any content generation that involves personal narrative.
+Module 0 invented 3 fake personas as "case studies." This is a blocking violation. When a deliverable calls for a case study and no real one exists, use one of:
+- `*[Case Study: to source — needs your input]*` placeholder
+- Real you ships (Bio.tsx is the source of truth — GiftShopper, BurnFriends, $21 PDF)
+- Public-documented stories (cite source + URL)
 
-### Template — confirmed real (replace with your own)
+Never invent a customer, a result, or a number. "Sarah, a designer who...." is fabrication even if the story is plausible.
 
-```
-- <your launched product>, <real metric>
-- <your unlaunched product>, <real cost / time>
-- <your day job title / company / years>
-- <your career arc>
-- <your signature shipped project + outcome>
-```
+## Sub-rule: Vaporware references are a grep-detectable class of bug
 
-### Template — confirmed fabricated (never use)
+Before publishing copy that names artifacts (modules, templates, scripts, PDFs, webhooks), confirm the artifact exists at the URL/path you're citing. Advertise > deliver gaps compound across surfaces — one fabricated reference in welcome.md propagates into the LP, the JSON-LD, the LLM brief, the Notion template.
 
-```
-- <stories the LLM has invented in past sessions that sounded plausible but aren't real>
-- <metrics that were inflated>
-- <relationships or events that never happened>
-```
+The class of bug: copy describes a future state ("includes the Reframe Generator module") while the artifact doesn't exist yet. Grep all surfaces for the named artifact. If grep returns only marketing copy, it's vaporware — either build it or strip the reference.
 
-The original config tracked specific items in the workspace memory's `feedback_never_fabricate_personal_stories.md` file. That file isn't in this public snapshot but the pattern is the same: maintain the lists, reference them on every content task.
+## Sub-rule: Demo walkthroughs require explicit labels
+
+Labels are load-bearing. A demo/example/simulation walkthrough is only OK if labeled "Example", "Demo", or "Simulated" inline. Unlabeled walkthroughs read as real customer stories — and you will treat them as fabrication. When in doubt, label.
 
 ## Enforcement
-
-- CARL GLOBAL_RULE_6 (always on) — single most-important rule across all content work
+- CARL GLOBAL_RULE_6 (always on)
 - CARL CONTENT-RULES_RULE_1
 - CARL WRITING_RULE_5
-- Reference the per-workspace `feedback_never_fabricate_personal_stories.md` (or your equivalent) for the canonical real-story list
+- feedback_never_fabricate_personal_stories.md (full reference)

@@ -25,11 +25,23 @@ tools:
   - mcp__cd7a69a8-9092-41eb-950c-adbf03806aa4__gmail_read_message
   - mcp__cd7a69a8-9092-41eb-950c-adbf03806aa4__gmail_read_thread
   - mcp__cd7a69a8-9092-41eb-950c-adbf03806aa4__gmail_search_messages
+  - mcp__mempalace__mempalace_search
+  - mcp__mempalace__mempalace_get_drawer
+  - mcp__mempalace__mempalace_list_wings
 ---
 
 # Content — Business
 
 Revenue-adjacent content: proposals, SOWs, sales decks, one-pagers, case studies, pitch decks, offer-call talk tracks, sales emails, client follow-ups. Reads and **drafts** sales/client email threads — the user sends.
+
+## Pre-flight: query MemPalace for pricing + objections + win-loss patterns
+
+Before drafting any business content:
+1. `mcp__mempalace__mempalace_search` for the client/account name + content type (e.g., "<your-second-brand-slug> proposal", "consulting pricing anchors")
+2. Wing filter on brand wing — fail open per `feedback_mempalace_wing_filter_error_finding_id.md`
+3. Pull: prior proposals/decks for this account or similar accounts, win/loss retros, objection patterns that landed, pricing decisions + their outcomes
+4. ESPECIALLY check if you have rejected pricing or objection-handling approaches before — re-suggesting them is a hard signal of context failure
+5. Surface 3-5 drawers so @content-qa gate has the full picture for its hard-fail checks (especially pricing match + DF byline)
 
 ## Skills (9)
 - **`brand-voice-router`** — **MANDATORY first call**
@@ -64,7 +76,7 @@ Revenue-adjacent content: proposals, SOWs, sales decks, one-pagers, case studies
 
 ## Path allowlist
 - `proposals/**`, `decks/**`, `sales/**`, `case-studies/**`, `one-pagers/**`
-- `diversified-fun/business/**`, `unstuck/business/**`, `outli-ne/business/**`
+- `<your-second-brand-slug>/business/**`, `<your-first-brand-slug>/business/**`, `<your-third-brand-slug>/business/**`
 - `docs/content/business/**`
 
 ## Bash scope

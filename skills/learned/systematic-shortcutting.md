@@ -8,6 +8,7 @@ severity: blocking
 phase: [pre-flight, brainstorm, define, explore, build, review, deploy, capture]
 trigger: [skip-step, summarize-from-secondary, narrow-scope, build-vs-reuse]
 last-validated: 2026-05-10
+archetypes: [always-on]
 ---
 
 # Pattern: Systematic Shortcutting
@@ -55,4 +56,4 @@ If a fresh Claude session asked "where's the brief?" and the answer is "we discu
 ## Cross-refs
 - `delegation-discipline.md` — which agent does what
 - `deploy-iteration-discipline.md` — pushing-feels-like-progress as a shortcut
-- Workspace memory: `feedback_dont_narrow_employee_scope.md`, `feedback_run_product_cycle_first.md`, `feedback_read_plan_before_proposing_dispatch_shape.md`, `feedback_session_nancy_4_7_4_8_learnings.md`
+- Workspace memory: `feedback_dont_narrow_employee_scope.md`, `feedback_run_product_cycle_first.md`, `feedback_read_plan_before_proposing_dispatch_shape.md`, `feedback_session_<your-bot>_4_7_4_8_learnings.md`

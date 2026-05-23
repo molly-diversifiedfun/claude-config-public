@@ -7,6 +7,7 @@ projects: [all]
 severity: warning
 phase: [brainstorm, build]
 last-validated: 2026-05-12
+archetypes: [always-on]
 ---
 
 # Pattern: Context Budget Check Before Large Tasks

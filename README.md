@@ -1,17 +1,18 @@
 # claude-config
 
-**A power-user Claude Code setup — 36 skills, 14 agents, 21 hooks, built around a memory-aware ship pipeline.**
+**A power-user Claude Code setup — 37 skills, 14 agents, 32 hooks, 27 commands, built around a scope-aware ship pipeline.**
 
-![license: MIT](https://img.shields.io/badge/license-MIT-blue) ![snapshot: 2026--05--12](https://img.shields.io/badge/snapshot-2026--05--12-orange) ![status: v1.0 \(no ongoing sync\)](https://img.shields.io/badge/status-v1.0%20snapshot-lightgrey) ![macOS / Linux](https://img.shields.io/badge/macOS%20%7C%20Linux-supported-success)
+![license: MIT](https://img.shields.io/badge/license-MIT-blue) ![snapshot: 2026--05--23](https://img.shields.io/badge/snapshot-2026--05--23-orange) ![status: v1.1 \(periodic refresh\)](https://img.shields.io/badge/status-v1.1%20snapshot-lightgrey) ![macOS / Linux](https://img.shields.io/badge/macOS%20%7C%20Linux-supported-success)
 <!-- Social preview card: assets/og-card.png (1200x630). Uploaded manually via repo Settings > Social preview. -->
 
 A snapshot of [Molly Shelestak](https://github.com/molly-diversifiedfun)'s working `~/.claude/` config, sanitized for public reference. Power users + Claude Code builders are the audience — not beginners.
 
 ## What you get
 
-- **A memory-aware `/ship` pipeline** that loads tagged learnings from past sessions before a feature starts and captures new feedback when it ends. Stops the same mistake recurring across projects.
+- **A scope-aware `/ship` pipeline (Smart v3 / Phase 8.0)** — a Haiku 4.5 Stage 0 classifier picks scope (S/M/L/XL) per ask, then only the stages that fit actually run. Each stage explicitly invokes a [superpowers](https://github.com/obra/superpowers) skill (brainstorming, tdd, verification-before-completion, requesting-code-review, finishing-a-development-branch). Memory pre-flight loads tagged learnings from past sessions; post-flight captures new feedback. Stops the same mistake recurring across projects.
 - **A 14-agent product team** (PM / engineer / reviewer / debugger / security / etc.) wired to specific models with specific skill palettes — no more "which agent do I spawn for this?"
-- **21 lifecycle hooks that enforce discipline**: block dangerous deletes, gate `/ship` deploys, log every Skill + Agent invocation for telemetry, refuse to end a session if the Definition of Done isn't met.
+- **32 lifecycle hooks that enforce discipline**: block dangerous deletes, gate `/ship` deploys, log every Skill + Agent invocation for telemetry, refuse to end a session if the Definition of Done isn't met, inject archetype-relevant skills into subagent dispatches, LLM-judge whether subagents used the surfaced skills (Phase 7.6).
+- **A skill-catalog system** — `/skills` semantic search over ~600 installed skills, `/bake-off` tournament-tests skills on the same task, `/consolidate-skills` finds duplicates via Jaccard + LLM-judge, `/merge-skills` synthesizes merged drafts. `/system-retro` retros the last 20 sessions via a Haiku judge.
 
 ---
 
@@ -110,7 +111,7 @@ Every hook, every learned pattern, every agent definition has a story like this 
 | `CLAUDE.md` | Global instructions that auto-load every session | 1 |
 | `bin/` | `install.sh`, `sync.sh`, `bootstrap.sh`, `sanitize-for-public.sh` | 4 |
 
-**Not included** (intentionally): `settings.json` (secrets), `projects/` (per-project memory), `HANDOFF.md` / `TASKS.md` / `.ship/` (session-specific), `skills/brand-voice-router/` (was brand-specific — ships as a template stub), `rules/content-system/` (brand content pipeline).
+**Not included** (intentionally): `settings.json` (secrets), `projects/` (per-project memory), `HANDOFF.md` / `TASKS.md` / `.ship/` (session-specific), `skills/brand-voice-router/` (was brand-specific — ships as a template stub), `rules/<your-content-pipeline>/` (brand content pipeline).
 
 ---
 
@@ -166,9 +167,10 @@ The blue stages are owned by `memory-keeper` (Haiku). The amber Stage 9 is the o
 
 ## The interesting parts
 
-- **[`docs/ship-pipeline-v2.md`](docs/ship-pipeline-v2.md)** — A memory-aware 11-stage feature pipeline that loads tagged learnings into a `patterns.md` manifest at pre-flight, gates Stage 9 (Deploy + Smoke) with a hook enforcing the 3-deploy rule + observability + smoke-test sections, and captures new feedback at post-flight.
-- **`hooks/`** — Lifecycle scripts that enforce discipline. `session-retrospective.sh` (Stop, 7-check DoD), `block-dangerous.sh` (PreToolUse:Bash, regex-tightened), `observe-learning.sh` (telemetry), `agent-batch-validator.sh` (≤4 file paths per Agent prompt), `ship-phase-gate.sh` (gates `/ship` Stage 9), `carl-loader.sh` (CARL rule injection).
-- **`skills/learned/`** — 16 cross-project patterns synthesized from session feedback. v2 frontmatter (`applies-to`, `projects`, `severity`, `phase`) so the ship-pipeline can filter-load them. Start with `systematic-shortcutting.md`, `verify-before-commit.md`, `deploy-iteration-discipline.md`.
+- **[`docs/ship-pipeline-v2.md`](docs/ship-pipeline-v2.md)** — A memory-aware 11-stage feature pipeline. Stage 0 (Phase 8.0) calls Haiku 4.5 to classify scope S/M/L/XL — small asks skip overhead; large asks pick up writing-plans + subagent-driven-development + ADR. Each stage explicitly binds a [superpowers](https://github.com/obra/superpowers) skill.
+- **`hooks/`** — 32 lifecycle scripts. Headliners: `session-retrospective.sh` (Stop, 8-check DoD incl. synthesis cadence), `block-dangerous.sh` (PreToolUse:Bash, regex-tightened), `observe-learning.sh` (telemetry), `inject-skills-for-agent.sh` (PreToolUse:Agent, Phase 7.5 — prepends top-3 archetype-relevant skills into subagent prompts), `agent-eval.sh` (PostToolUse:Agent + Stop drain, Phase 7.6 — LLM-judge grades whether subagents used the surfaced skills), `ship-phase-gate.sh` (gates `/ship` Stage 9), `carl-loader.sh` (CARL rule injection), `archetype-injector.sh` (UserPromptSubmit — resolves cwd → archetype → relevant learned patterns + work-type chain + skill candidates).
+- **`scripts/`** — 21 runtime utilities. `system-retro.py` (one-shot retrospective over last 20 sessions with Haiku judge), `consolidate-skills.py` (Jaccard + body-token + LLM-judge to find duplicate skills), `merge-skills.py` (Sonnet synthesizes merged drafts), `skills-prefilter.sh` (semantic search shared by `/skills`, `/bake-off`, Phase 7.5 hook), `bake-off-prefilter.sh` + `bake-off-record.sh` (tournament framework), `ship-scope-classify.py` (Haiku S/M/L/XL classifier).
+- **`skills/learned/`** — cross-project patterns synthesized from session feedback. v2 frontmatter (`applies-to`, `projects`, `severity`, `phase`) so the ship-pipeline can filter-load them. Start with `systematic-shortcutting.md`, `verify-before-commit.md`, `deploy-iteration-discipline.md`, `never-fabricate.md`, `llm-judge-needs-retry-and-defensive-parse.md`.
 - **The 14 agents** — `product-lead` (opus) plans, `engineer` (sonnet) builds, `reviewer` (sonnet) reviews, `designer` (sonnet) does UI/UX, `debugger` (opus) investigates, `tech-researcher` (sonnet) checks docs, `security` (opus) audits, `project-manager` (haiku) tracks, `memory-keeper` (haiku) owns ship-pipeline Stage 1 + 11, 4 `content-*` agents (lanes), `market-researcher` (sales/market intel).
 
 ---
@@ -235,20 +237,20 @@ The `learned/` patterns reference personal feedback file names (e.g. `feedback_s
 
 If this saved you a setup pass, a one-line credit is appreciated but not required. Example tweet:
 
-> Just installed [@moleonthego](https://twitter.com/moleonthego)'s `claude-config-public` — 36 skills, 14 agents, 21 hooks, and a memory-aware `/ship` pipeline that won't let you end a session without a HANDOFF. Worth a read if you live in Claude Code.
+> Just installed [@moleonthego](https://twitter.com/moleonthego)'s `claude-config-public` — 37 skills, 14 agents, 32 hooks, and a scope-aware `/ship` pipeline that picks S/M/L/XL per ask and binds a superpowers skill to each stage. Worth a read if you live in Claude Code.
 >
 > https://github.com/molly-diversifiedfun/claude-config-public
 
 <!--
 TWEET TEMPLATE — paste-ready. Customize first sentence:
 
-"Just installed @moleonthego's claude-config-public — 36 skills, 14 agents, 21 hooks, and a memory-aware /ship pipeline that won't let you end a session without a HANDOFF. Worth a read if you live in Claude Code.
+"Just installed @moleonthego's claude-config-public — 37 skills, 14 agents, 32 hooks, and a scope-aware /ship pipeline that picks S/M/L/XL per ask and binds a superpowers skill to each stage. Worth a read if you live in Claude Code.
 
 https://github.com/molly-diversifiedfun/claude-config-public"
 
 LINKEDIN TEMPLATE — slightly longer form:
 
-"If you're already a Claude Code power user, Molly Shelestak (@moleonthego on X) just open-sourced her working config. 36 skills, 14 agents, 21 lifecycle hooks, and a memory-aware /ship pipeline that loads tagged learnings from prior sessions before a feature starts. Snapshot — not maintained — so cherry-pick what fits.
+"If you're already a Claude Code power user, Molly Shelestak (@moleonthego on X) just refreshed her open-sourced working config (v1.1, 2026-05-23). 37 skills, 14 agents, 32 lifecycle hooks, a scope-aware /ship pipeline that classifies S/M/L/XL via Haiku, an LLM-judge that grades whether subagents used the skills they were given, and a tournament framework for testing skills against each other. Cherry-pick what fits.
 
 https://github.com/molly-diversifiedfun/claude-config-public"
 -->

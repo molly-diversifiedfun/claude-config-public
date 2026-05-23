@@ -1,8 +1,23 @@
-# Ship Pipeline v2 — Memory-Aware /ship
+# Ship Pipeline v3 — Smart Scope-Aware /ship
 
-**Status:** v1 vertical slice shipped 2026-05-10. Stage 9 (Deploy + Smoke) gated end-to-end. Stages 1 + 11 (pre-flight + capture) wired. Stages 2–8 + 10 stay as inline reminders for v1; Phase B/C will gate them.
+**Status:** v3 (Phase 8.0, 2026-05-23) — adds Stage 0 scope classifier + explicit per-stage superpowers skill bindings. v2 (memory-aware, 2026-05-10) — Stage 9 (Deploy + Smoke) gated end-to-end; Stages 1 + 11 (pre-flight + capture) wired. Stages 2–8 + 10 stay as inline reminders.
 
-> The original spec + 22-task implementation plan are NOT in this public snapshot (they were excluded along with `docs/specs/` and `docs/plans/`). This doc is the standalone overview. The full design narrative lives in the [companion case study](https://github.com/molly-diversifiedfun/claude-skills) if/when it's published there.
+## v3 — Stage 0 scope classifier (Phase 8.0)
+
+A Haiku 4.5 call (`scripts/ship-scope-classify.py "<ask>"`, 30s timeout) classifies each ask into one of S / M / L / XL. The scope determines which stages actually run:
+
+| Scope | Stages run | Required superpowers skills |
+|---|---|---|
+| **S** | 6 + 9 | `tdd`, `verification-before-completion` |
+| **M** | 1 + 2 + 3 + 6 + 7 + 9 + 10 + 11 | `brainstorming`, `tdd`, `verification-before-completion`, `requesting-code-review`, `finishing-a-development-branch` |
+| **L** | 1 + 2 + 3 + 4* + 5* + 6 + 7+`subagent-driven-development` + 8 + 9 + 10 + 11 | M's set + `writing-plans` (Stage 4) + `subagent-driven-development` (Stage 7) |
+| **XL** | All stages + ADR mandatory in Stage 3 + memory-keeper double-pass | L's set |
+
+\* Stage 4 only if UI; Stage 5 only if open unknowns. Soft-fails to S on classifier failure (smallest-safe default). Kill: `SHIP_SCOPE=off` defaults to M.
+
+This collapses small asks to minimal stages while binding the same disciplines explicitly. Direct response to the [`/system-retro`](../commands/system-retro.md) finding that `/ship` was structural overkill on small asks AND didn't enforce superpowers at any gate.
+
+> The original spec + 22-task implementation plan are NOT in this public snapshot (they were excluded along with `docs/specs/` and `docs/plans/`). This doc is the standalone overview. The full design narrative lives in the [companion case study](https://github.com/<your-github-username>/claude-skills) if/when it's published there.
 
 ## What changed
 

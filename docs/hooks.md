@@ -1,6 +1,6 @@
 # Hooks Reference
 
-21 shell scripts wired into Claude Code's lifecycle. Each fires automatically on a specific event — they don't depend on Claude "remembering" to invoke them.
+32 shell scripts wired into Claude Code's lifecycle. Each fires automatically on a specific event — they don't depend on Claude "remembering" to invoke them. v1.1 adds 11 hooks (Phase 7.5 / 7.6 / 7.7c / 8.0 / 8.1) — see `CHANGELOG.md`.
 
 ## Lifecycle events
 

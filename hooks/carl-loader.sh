@@ -10,6 +10,10 @@ INPUT=$(cat 2>/dev/null)
 PROMPT=$(echo "$INPUT" | jq -r '.prompt // ""' 2>/dev/null)
 CWD=$(echo "$INPUT" | jq -r '.cwd // ""' 2>/dev/null)
 
+# Capture last prompt for downstream hooks (audience-gate, scope check)
+mkdir -p "$HOME/.claude/checkpoints"
+echo "$PROMPT" > "$HOME/.claude/checkpoints/last_prompt"
+
 if [ -z "$PROMPT" ]; then echo '{}'; exit 0; fi
 
 CARL_DIR="$CARL_GLOBAL"

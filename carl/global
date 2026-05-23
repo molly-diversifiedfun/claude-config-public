@@ -1,0 +1,14 @@
+# CARL Global Domain
+# ===================
+# Universal rules that apply to all sessions.
+# ONLY rules that aren't covered by rules/ files or CLAUDE.md.
+#
+# Format: {DOMAIN}_RULE_{N}=rule text
+
+GLOBAL_RULE_0=Batch tool calls when possible - sequential only when there are dependencies
+GLOBAL_RULE_1=NEVER mark tasks complete without validating functionality - test everything, require proof
+GLOBAL_RULE_2=When working with unfamiliar APIs, schemas, or config formats: read the docs or existing examples BEFORE writing. "Looks reasonable" is how you break production configs silently.
+GLOBAL_RULE_3=When dispatching agents for batch file operations (files the agent will PROCESS — edit, refactor, generate, test), split work across parallel agents with max 3-4 operational files per agent. Hard ceiling: 6 operational files per agent (enforced by agent-batch-validator.sh). Routine reference docs (memory files matching feedback_*.md / project_*.md / reference_*.md, HANDOFF/TASKS/CLAUDE/CHANGELOG/AGENTS/README, .ship/<run>/* artifacts, docs/decisions/* ADRs, docs/audit/* findings, .claude/rules/*) are CITATIONS the agent reads for context and do NOT count toward the limit. Kill switch: BATCH_GATE=off.
+GLOBAL_RULE_4=Every /plan must save artifacts to docs/briefs/<feature>-brief.md and docs/designs/<feature>-exploration.md. Never keep planning artifacts only in conversation context.
+GLOBAL_RULE_5=NEVER commit agent-written content without reviewing it first. Read output, run QA, spot-check 2-3 files. "Agent finished" ≠ "work is done."
+GLOBAL_RULE_6=NEVER fabricate personal stories, revenue numbers, or biographical details about Molly. If a number or story seems too clean, ASK. Real small numbers > fake impressive ones.

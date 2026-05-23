@@ -1,12 +1,13 @@
 ---
 name: voice-and-content-rules
-description: Voice register (Kerouac × Sinek × Codie Sanchez), pillars/format mix, copy-is-sacred discipline, carousel variety rules. The cumulative voice contract for all Unstuck content.
+description: Voice register (Kerouac × Sinek × Codie Sanchez), pillars/format mix, copy-is-sacred discipline, carousel variety rules. The cumulative voice contract for all <your-first-brand> content.
 type: learned-pattern
 applies-to: [content]
 projects: [all]
-severity: blocking
+severity: warning
 phase: [content, verify]
-last-validated: 2026-05-12
+last-validated: 2026-05-20
+archetypes: [brand-content]
 ---
 
 # Pattern: Voice Register and Content Rules
@@ -19,7 +20,7 @@ Write like texting a smart friend at midnight. Not performing wisdom — thinkin
 ## Social vs long-form split
 - Instagram/social: plain language, "ship" and "build" OK, drop PM jargon
 - Website/essays: PM terminology OK, reader self-selected
-- Unstuck is a "build partnership practice" — NEVER call it coaching
+- <your-first-brand> is a "build partnership practice" — NEVER call it coaching
 
 ## Content pillar rules
 - Mirror: stops at Agitate. No solution language. CTA = share trigger.
@@ -66,6 +67,22 @@ When restyling existing slides, **read source HTML first and preserve copy verba
 Always QA every page after Canva edits. Canva auto-corrects some text containers but not all.
 - Off-screen check: `left + width > 1080` or `top + height > 1350`
 
+## Nurture voice — blocking rules
+
+For email nurture, drip sequences, and re-engagement copy:
+
+- **NO timing-shame language.** Banned: "still stuck on the same project?", "month 3 and still no launch?", "are you ACTUALLY going to ship this time?" your audience (senior-tech ICs with stalled side projects) is already timing-shamed by their own internal monologue. Adding to it loses trust permanently.
+- **Momentum Method ≠ shipping.** Momentum Method is system-building (habits, infra, sustainable ops). Don't conflate "you'll ship faster" with "you'll build the right system." The promise is the system, not the velocity.
+- **Speak to the IC reader who's senior at their day job and stuck on the side.** Not "aspiring entrepreneurs," not "founders," not "creators." The pronoun is "you" — singular, specific, capable.
+
+## Audience-matched LP patterns
+
+Hormozi-style "value stack + countdown + 17 testimonials" landing pages fail for senior-tech IC audiences. The substantive page IS the LP for this audience — strip the capture flow, give them the actual content, let the product sell itself.
+
+- For senior-IC audience: long-form essay LP, no popup, soft CTA at bottom, no urgency theater
+- For impulse-buy audience: short LP, big CTA above fold, social proof stack
+- Match the LP pattern to the audience the traffic source delivers — don't apply one template across all funnels
+
 ## Banned vocabulary (cross-ref content-voice.md)
 
 unlock, unleash, manifest, journey, transformation, level up, game-changer, revolutionary, synergy, holistic, paradigm shift, deep dive (as verb), lean in, circle back, move the needle, at the end of the day. Number "47" never appears as an "arbitrary" example.
@@ -74,7 +91,7 @@ unlock, unleash, manifest, journey, transformation, level up, game-changer, revo
 - CARL WRITING domain (7 rules)
 - CARL CONTENT-RULES domain (8 rules)
 - content-qa-guarded.sh PostToolUse hook
-- Caption pipeline: unstuck/prompts/caption-generator.md
+- Caption pipeline: <your-first-brand-slug>/prompts/caption-generator.md
 
 ## Cross-refs
 - `verify-before-commit.md` — read agent-written copy, grep for AI tells

@@ -4,10 +4,11 @@ description: 3-deploy rule. Buy observability before deploy 3 OR pivot to a stac
 type: learned-pattern
 applies-to: [deploy, infra, observability]
 projects: [all]
-severity: blocking
+severity: warning
 phase: [build, deploy]
 trigger: [3-deploy-rule, opaque-runtime, framework-pivot, change-set-drift]
-last-validated: 2026-05-08
+last-validated: 2026-05-20
+archetypes: [web-app, telegram-bot, infra-config]
 ---
 
 # Pattern: Deploy Iteration Discipline
@@ -48,11 +49,17 @@ Specs written hours/days earlier drift against the real world: PyPI versions mov
 ## Vercel/Railway/build deploy gotchas (Content OS, 2026-04-30)
 
 - **tsc is stricter than vite build.** Vercel runs `tsc -b && vite build`. Local `vite build` skips tsc. Always run `npx tsc -b --noEmit` before deploying.
-- **Symlinks break Vercel builds.** `public/unstuck → ../` works locally, ENOENT on Vercel. Remove symlinks from `public/`.
+- **Symlinks break Vercel builds.** `public/<your-app> → ../` works locally, ENOENT on Vercel. Remove symlinks from `public/`.
 - **VITE_ env vars must be set in deploy target.** Without them the app renders blank (Supabase client throws at startup).
 - **Supabase generated types lag schema.** After adding tables, regen types or `as any` cast on `supabase.from()`.
 - **`vite envDir`** pointing to parent dir works locally but not on Vercel — use `__dirname`.
 - **Railway `[deploy].startCommand`** overrides Dockerfile CMD and runs in exec form, so `$PORT` won't shell-expand. Drop `startCommand` or wrap in `bash -c`.
+
+## Before deploy 2: verify diagnostics fire
+
+Before iterating on a behavioral bug, confirm your logging is actually reaching the log surface. `logger.info(...)` in FastAPI/uvicorn is silently swallowed unless you call `logging.basicConfig(force=True)` in lifespan. Stock plugins (openclaw `device-pair`, n8n triggers) can claim inbound traffic before your custom handler sees it — confirm the path fires by adding a stamp at entry, not at the suspected bug location.
+
+If 3 deploys debugging an issue haven't surfaced one new piece of evidence, you're not iterating — you're guessing in production. Stop. Add observability or pivot to a stack you can see.
 
 ## Local first when secrets exist
 

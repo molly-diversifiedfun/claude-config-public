@@ -2,6 +2,16 @@
 # block-dangerous.sh — PreToolUse hook (matcher: Bash)
 # Blocks dangerous commands. Exits non-zero to block, zero to allow.
 # Input: JSON on stdin from Claude Code hook system
+#
+# Kill switch: DANGEROUS_GATE=off <command>
+
+# Kill switch — fail-open if explicitly disabled
+if [[ "${DANGEROUS_GATE:-on}" == "off" ]]; then
+  exit 0
+fi
+
+# Shared block logger (no-op if lib missing)
+source "$HOME/.claude/hooks/lib/log-block.sh" 2>/dev/null || true
 
 # Parse command from stdin JSON (Claude Code passes hook data via stdin, not env vars)
 INPUT=$(cat 2>/dev/null)
@@ -28,8 +38,7 @@ DANGEROUS_PATTERNS=(
   'rm[[:space:]]+-rf[[:space:]]+\$HOME[[:space:]]+(\*|--)'       # rm -rf $HOME *  or  --
   'rm[[:space:]]+-rf[[:space:]]+\$HOME/\*[[:space:]]*$'          # rm -rf $HOME/*
   'git reset --hard'
-  'git push --force'
-  'git push -f'
+  'git push[[:space:]]+(-f|--force)([[:space:]]|$)'              # plain force, NOT --force-with-lease
   'sudo '
   'curl .* \| sh'
   'curl .* \| bash'
@@ -39,16 +48,15 @@ DANGEROUS_PATTERNS=(
 
 for PATTERN in "${DANGEROUS_PATTERNS[@]}"; do
   if echo "$COMMAND" | grep -qE "$PATTERN" 2>/dev/null; then
-    echo "BLOCKED: Dangerous command detected (pattern: $PATTERN)"
-    echo "If you really need this, ask the user to run it manually."
+    echo "BLOCKED: Dangerous command detected (pattern: $PATTERN)" >&2
+    echo "If you really need this, ask the user to run it manually via the ! prefix." >&2
+    echo "  Kill switch: DANGEROUS_GATE=off <command>" >&2
+    type log_block >/dev/null 2>&1 && log_block "BLOCKED: Dangerous command detected (pattern: $PATTERN)" "DANGEROUS_GATE"
     exit 2
   fi
 done
 
-# Also block force push variants
-if echo "$COMMAND" | grep -qE "git push.*--force" 2>/dev/null; then
-  echo "BLOCKED: Force push detected. Use --force-with-lease if explicitly requested."
-  exit 2
-fi
+# (force-push is now handled inside DANGEROUS_PATTERNS with a regex that
+# excludes --force-with-lease. No separate check needed.)
 
 exit 0

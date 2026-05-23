@@ -75,4 +75,4 @@ Every other skill. This is the universal front door.
 
 When a user's request maps to a specialized skill — resume builder, decision framework, interview prep — run the intake to extract context, then hand off to that skill with a structured brief. Ask-me-the-questions doesn't produce the deliverable itself; it makes sure the deliverable is informed.
 
-Works especially well with **self-interview** (different purpose: self-interview clarifies the user's thinking, this one clarifies context for a deliverable) and **unstuck-coach** (for deeper, multi-session discovery that exceeds 5 questions).
+Works especially well with **self-interview** (different purpose: self-interview clarifies the user's thinking, this one clarifies context for a deliverable) and **build-coach** (for deeper, multi-session discovery that exceeds 5 questions).

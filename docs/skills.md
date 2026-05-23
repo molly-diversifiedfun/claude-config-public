@@ -1,6 +1,6 @@
 # Skills Catalog
 
-36 custom skills, organized by purpose. Each skill auto-invokes when the user's request matches its trigger phrases — no slash command needed.
+37 custom skills, organized by purpose. Each skill auto-invokes when the user's request matches its trigger phrases — no slash command needed. v1.1 adds a few skills via the catalog system; see `CHANGELOG.md`. The `ai-build-partner` skill is intentionally excluded from this snapshot — it ships separately in the author's [`claude-skills`](https://github.com/molly-diversifiedfun/claude-skills) public repo.
 
 ## Writing & Voice
 

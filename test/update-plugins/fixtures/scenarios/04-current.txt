@@ -1,0 +1,2 @@
+remote get-url origin|https://example.invalid/alpha.git||0|0
+ls-remote origin HEAD|aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa	HEAD||0|0

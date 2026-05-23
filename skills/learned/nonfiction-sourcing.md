@@ -4,9 +4,10 @@ description: Source every factual claim BEFORE writing it, never after. <your no
 type: learned-pattern
 applies-to: [content, verification]
 projects: [all]
-severity: blocking
+severity: warning
 phase: [build, verify]
-last-validated: 2026-05-12
+last-validated: 2026-05-20
+archetypes: [brand-content]
 ---
 
 # Pattern: Source Everything in Nonfiction

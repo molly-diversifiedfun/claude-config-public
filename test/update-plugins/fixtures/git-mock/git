@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# git-mock: reads scripted responses from $GIT_MOCK_SCENARIO file.
+# Scenario file format (one line per call, in order):
+#   ARGS_REGEX|STDOUT|STDERR|EXIT|SLEEP_MS
+# ARGS_REGEX matched against all args joined by space.
+# First matching line wins. Lines starting with # are comments.
+
+set -u
+
+if [ -z "${GIT_MOCK_SCENARIO:-}" ] || [ ! -f "$GIT_MOCK_SCENARIO" ]; then
+    echo "git-mock: GIT_MOCK_SCENARIO not set or missing: ${GIT_MOCK_SCENARIO:-<unset>}" >&2
+    exit 99
+fi
+
+ARGS="$*"
+
+while IFS='|' read -r pattern stdout stderr exit_code sleep_ms; do
+    [ -z "$pattern" ] && continue
+    [[ "$pattern" == \#* ]] && continue
+    if [[ "$ARGS" =~ $pattern ]]; then
+        if [ -n "${sleep_ms:-}" ] && [ "$sleep_ms" -gt 0 ] 2>/dev/null; then
+            sleep "$(awk -v ms="$sleep_ms" 'BEGIN{print ms/1000}')"
+        fi
+        [ -n "$stdout" ] && printf '%s\n' "$stdout"
+        [ -n "$stderr" ] && printf '%s\n' "$stderr" >&2
+        exit "${exit_code:-0}"
+    fi
+done < "$GIT_MOCK_SCENARIO"
+
+echo "git-mock: no matching scenario line for args: $ARGS" >&2
+exit 98

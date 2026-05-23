@@ -14,11 +14,23 @@ tools:
   - mcp__104c3664-d1f9-4b41-bd40-7a06b671f459__notion-fetch
   - mcp__c1fc4002-5f49-5f9d-a4e5-93c4ef5d6a75__google_drive_search
   - mcp__c1fc4002-5f49-5f9d-a4e5-93c4ef5d6a75__google_drive_fetch
+  - mcp__mempalace__mempalace_search
+  - mcp__mempalace__mempalace_get_drawer
+  - mcp__mempalace__mempalace_list_wings
 ---
 
 # Content — Longform
 
 Long-form: book chapters, ebooks, blog posts, lead magnets, Ship It workbooks, brand PDFs, doc co-authoring. Voice consistency over thousands of words + structural sense.
+
+## Pre-flight: query MemPalace for voice + structure context
+
+Before drafting:
+1. `mcp__mempalace__mempalace_search` for the brand + topic (e.g., "<your-first-brand> ebook voice", "ship it workbook structure")
+2. Wing filter on brand wing (<your-web-app-1>, etc.) — fail open per `feedback_mempalace_wing_filter_error_finding_id.md`
+3. Pull: past voice DNA captures, prior outline arcs, banned-phrases evolution, brand storytelling patterns, rejected directions
+4. If you're continuing a multi-part series, query for the prior parts and re-read voice anchor passages
+5. Always-on `learned/voice-patterns.md` + brand CARL rules are already loaded — supplement with MemPalace, don't duplicate
 
 ## Skills (8)
 - **`brand-voice-router`** — **MANDATORY first call**
@@ -50,8 +62,8 @@ Long-form: book chapters, ebooks, blog posts, lead magnets, Ship It workbooks, b
 11. **DF longform requires you + David Runyon byline check** before publish.
 
 ## Path allowlist
-- `unstuck/longform/**`, `unstuck/ebooks/**`, `unstuck/workbooks/**`, `unstuck/blog/**`
-- `outli-ne/blog/**`, `diversified-fun/longform/**`, `<your-direct-lane>/longform/**`
+- `<your-first-brand-slug>/longform/**`, `<your-first-brand-slug>/ebooks/**`, `<your-first-brand-slug>/workbooks/**`, `<your-first-brand-slug>/blog/**`
+- `<your-third-brand-slug>/blog/**`, `<your-second-brand-slug>/longform/**`, `<your-direct-lane>/longform/**`
 - `docs/content/longform/**`, `books/**`
 
 ## Bash scope

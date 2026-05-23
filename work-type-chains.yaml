@@ -1,0 +1,59 @@
+# ~/.claude/work-type-chains.yaml — work-type → ordered skill chain
+# Phase 7.1.5 — chains are ORDERED (first entry = first skill to consider).
+# Render emits as numbered list.
+#
+# Vocabulary (9 work-types):
+#   build | plan | review | debug | research | write-content | memory | design | infra
+#
+# Editing rule: chains stay short (3-5 entries). If a chain grows past 5,
+# split the work-type into sub-types.
+#
+# To validate: bash ~/.claude/scripts/validate-work-type-chains.sh
+
+build:
+  - superpowers:test-driven-development
+  - superpowers:subagent-driven-development
+  - superpowers:verification-before-completion
+
+plan:
+  - superpowers:brainstorming
+  - mental-models
+  - superpowers:writing-plans
+  - superpowers:executing-plans
+
+review:
+  - superpowers:requesting-code-review
+  - superpowers:receiving-code-review
+  - everything-claude-code:security-review
+
+debug:
+  - superpowers:systematic-debugging
+  - superpowers:verification-before-completion
+
+research:
+  - firecrawl
+  - context7:context7
+  - everything-claude-code:iterative-retrieval
+
+write-content:
+  - brand-voice-router
+  - copywriting
+  - humanize-ai-writing
+  - hooks
+
+memory:
+  - handoff
+  - update-memory
+  - /promote
+  - /learn
+
+design:
+  - frontend-design:frontend-design
+  - ui-ux-pro-max:ui-ux-pro-max
+  - nano-banana
+
+infra:
+  - carl-manager
+  - update-config
+  - claude-code-setup:claude-automation-recommender
+  - compound-engineering:create-agent-skills

@@ -1,0 +1,372 @@
+{
+  "_comment_about_this_file": "Sanitized snapshot of ~/.claude/settings.json. Personal paths replaced with ~/ tilde form. See settings.example.README.md for wire-in steps. Real settings.json is gitignored.",
+  "skillListingBudgetFraction": 0.1,
+  "env": {
+    "MAX_THINKING_TOKENS": "63999",
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(node *)",
+      "Bash(bun *)",
+      "Bash(brew *)",
+      "Bash(cat *)",
+      "Bash(ls *)",
+      "Bash(cd *)",
+      "Bash(pwd)",
+      "Bash(which *)",
+      "Bash(echo *)",
+      "Bash(mkdir *)",
+      "Bash(cp *)",
+      "Bash(mv *)",
+      "Bash(touch *)",
+      "Bash(chmod *)",
+      "Bash(git status*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git branch*)",
+      "Bash(git checkout*)",
+      "Bash(git switch*)",
+      "Bash(git stash*)",
+      "Bash(git fetch*)",
+      "Bash(git merge*)",
+      "Bash(git rebase*)",
+      "Bash(git remote*)",
+      "Bash(git rev-parse*)",
+      "Bash(git show*)",
+      "Bash(git tag*)",
+      "Bash(supabase *)",
+      "Bash(python3 *)",
+      "Bash(pip *)",
+      "Bash(pytest *)",
+      "Bash(vitest *)",
+      "Bash(tsc *)",
+      "Bash(eslint *)",
+      "Bash(biome *)",
+      "Bash(prettier *)",
+      "Bash(gh *)",
+      "Bash(jq *)",
+      "Bash(wc *)",
+      "Bash(sort *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(grep *)",
+      "Bash(find *)",
+      "Bash(diff *)",
+      "Bash(sed *)",
+      "Bash(awk *)",
+      "Bash(tr *)",
+      "Bash(cut *)",
+      "Bash(xargs *)",
+      "Bash(date *)",
+      "Bash(env *)",
+      "Bash(export *)",
+      "Read",
+      "Edit",
+      "Write",
+      "Glob",
+      "Grep",
+      "Agent",
+      "WebFetch",
+      "WebSearch"
+    ],
+    "deny": [
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.config/gh/**)",
+      "Read(./secrets/**)",
+      "Read(.env*)",
+      "Read(**/.env*)",
+      "Bash(curl * | sh)",
+      "Bash(curl * | bash)",
+      "Bash(sudo *)",
+      "Bash(git reset --hard*)",
+      "Bash(git push --force*)",
+      "Bash(git push * --force*)",
+      "Bash(rm -rf /)",
+      "Bash(rm -rf ~)"
+    ]
+  },
+  "deniedMcpServers": [
+    {
+      "serverName": "<example_denied_mcp_server_1>"
+    },
+    {
+      "serverName": "<example_denied_mcp_server_2>"
+    }
+  ],
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/session-restore.sh"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/synthesize-learnings.sh",
+            "statusMessage": "Checking for new learnings..."
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/check-model-freshness.sh",
+            "statusMessage": "Checking model version freshness..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/session-end-save.sh"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/session-retrospective.sh",
+            "statusMessage": "Running session retrospective..."
+          }
+        ]
+      }
+    ],
+    "TeammateIdle": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Respond ONLY with raw JSON, no markdown. Use {\"decision\":\"block\",\"reason\":\"...\"} to block or {} to allow.\n\nBlock if the teammate explicitly says work is unfinished or deferred. Allow if the teammate completed its assigned task and is returning results."
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Respond ONLY with raw JSON, no markdown. Default response is `{}` (allow).\\n\\nDEFAULT: ALLOW. The user is in active control of task state and marks tasks complete intentionally. Uncertainty is NEVER a reason to block — if you can't determine whether the work was done from the visible context, respond `{}`.\\n\\nThe ONLY block trigger: the task subject is a literal command-form like \\\"Run pytest\\\", \\\"Execute migration X\\\", \\\"Deploy to prod\\\" AND the conversation transcript shows zero evidence of that specific command being invoked. Descriptive subjects (e.g. \\\"Stage 9 — deploy + smoke\\\", \\\"verify ACs\\\", \\\"run lint\\\") with ANY tool execution, agent dispatch, command output, SQL query result, AC verification, or status report in the conversation context ALWAYS allow — those signal work was done even if you can't see the full trace.\\n\\nSubjects containing the words \\\"test\\\", \\\"smoke\\\", \\\"verify\\\", \\\"capture\\\", \\\"deploy\\\", \\\"ship\\\", or \\\"check\\\" as DESCRIPTIVE labels (not literal commands) do NOT trigger a block on their own. If in doubt about whether a subject is command-form or descriptive, treat it as descriptive and allow.\\n\\nNever block code changes, refactoring, planning, design, documentation, memory updates, sync work, or any task where work-product is visible in the conversation."
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/carl-loader.sh"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/archetype-injector.sh"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/mid-session-dod-nudge.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/ship-skill-tracker.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/observe-learning.sh pre"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/block-dangerous.sh"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/pre-commit-checks.sh",
+            "statusMessage": "Checking commit for missing docs/tests..."
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/block-issue-close-without-tests.sh",
+            "statusMessage": "Checking issue close has test evidence..."
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/caption-guard.sh",
+            "statusMessage": "Checking caption generation uses prompt..."
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/caption-pipeline-guard.sh",
+            "statusMessage": "Checking caption pipeline..."
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/audience-gate.sh",
+            "statusMessage": "Checking audience for deliverable..."
+          }
+        ]
+      },
+      {
+        "matcher": "Compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/pre-compact-save.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/workflow-gate.sh",
+            "statusMessage": "Checking workflow prerequisites..."
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/agent-batch-validator.sh",
+            "statusMessage": "Checking agent batch size..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/observe-learning.sh post"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/prettier-format.sh"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/content-qa-guarded.sh",
+            "statusMessage": "Running content QA checks..."
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/validate-n8n-workflow.sh",
+            "statusMessage": "Validating n8n workflow..."
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/auto-push-after-commit.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Agent|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/ship-phase-gate.sh"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "terminal-notifier -title 'Claude Code' -message 'Claude needs your attention' -sound default 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/auto-approve.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "node \"~/.claude/hooks/gsd-statusline.js\""
+  },
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "pr-review-toolkit@claude-plugins-official": true,
+    "context7@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "playwright@claude-plugins-official": true,
+    "compound-engineering@every-marketplace": true,
+    "supabase@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "ask-questions-if-underspecified@trailofbits": true,
+    "audit-context-building@trailofbits": true,
+    "differential-review@trailofbits": true,
+    "everything-claude-code@everything-claude-code": true,
+    "ui-ux-pro-max@ui-ux-pro-max-skill": true
+  },
+  "extraKnownMarketplaces": {
+    "ui-ux-pro-max-skill": {
+      "source": {
+        "source": "github",
+        "repo": "<owner>/<repo>"
+      }
+    }
+  },
+  "preferredNotifChannel": "iterm2",
+  "skipAutoPermissionPrompt": true
+}

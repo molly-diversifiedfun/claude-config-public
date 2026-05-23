@@ -58,7 +58,7 @@ See: [docs/agents.md](agents.md) for the team roster.
 
 **Examples:**
 - `/build` — standard feature mode (lightweight spec → 3-5 agents → auto-proceed)
-- `/ship` — full pipeline mode, memory-aware v2 (11 stages: pre-flight + 9 agents + capture; Stage 9 hook-gated). See `docs/ship-pipeline-v2.md`.
+- `/ship` — full pipeline mode, Smart v3 (Phase 8.0). Stage 0 calls Haiku 4.5 to pick S/M/L/XL scope, then only the stages that fit run. Each stage explicitly binds a [superpowers](https://github.com/obra/superpowers) skill. See `docs/ship-pipeline-v2.md`.
 - `/handoff` — generate a session-continuity doc
 
 **When to add one:** When a workflow has 3+ predictable steps and you want a one-token entry point. Commands are sugar over "type the same paragraph every time you want to do X."
@@ -76,7 +76,7 @@ See: [docs/commands.md](commands.md) for the reference.
 - `python/` — Python style
 - `typescript/` — TypeScript style
 
-> Note: the original private config carried a fourth `content-system/` domain with brand-specific content production rules (caption-generation, content-plan-enforcement). It was stripped from this public snapshot — bring your own content rules if you have a content pipeline.
+> Note: the original private config carried a fourth `<your-content-pipeline>/` domain with brand-specific content production rules (caption-generation, content-plan-enforcement). It was stripped from this public snapshot — bring your own content rules if you have a content pipeline.
 
 **When to add one:** When the rule should hold across most/all sessions in a domain. Don't put rules in skills (which only fire on match); rules are for things that need to be top-of-mind always.
 

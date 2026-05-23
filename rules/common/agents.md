@@ -42,7 +42,7 @@ Your product engineering team:
 
 ### File reference limit
 Agent prompts must reference ≤4 explicit file paths (src/, docs/, supabase/).
-The `agent-batch-validator.sh` hook enforces this. Instead of listing paths, tell agents to "grep for X" or "find files matching Y".
+The `agent-batch-validator.sh` hook enforces this. Instead of listing paths, tell agents to "grep for X" or "find files matching Y". The same hook also enforces scope-fidelity after the batch-size check: if the last user prompt contained scope tokens (all/every/each + collection noun), the agent prompt MUST restate scope via a `Scope: [...]` line or it will be blocked (kill switch: `SCOPE_GATE=off`).
 
 ### Build agents must include tests
 Every /build agent prompt MUST include test-writing as a deliverable. Tests ship in the same commit as the feature. Example:

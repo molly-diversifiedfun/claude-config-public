@@ -8,6 +8,7 @@ severity: warning
 phase: [test, deploy, capture]
 trigger: [first-real-run, acceptance-test, post-build-validation]
 last-validated: 2026-05-10
+archetypes: [infra-config]
 ---
 
 When a new system or pipeline ships v1, the first real production run should be using that system to produce its own documentation, marketing site, release notes, or other artefact about itself. The recursive load forces every gap to surface during the moment you have the most attention to fix them.

@@ -4,8 +4,18 @@
 # Receives JSON on stdin from Claude Code PreToolUse hook.
 # Only fires on `git commit` commands — exits silently for everything else.
 # Exit 0 = allow, Exit 2 = block with message.
+#
+# Kill switch: PRECOMMIT_GATE=off <command>
 
 set -uo pipefail
+
+# Kill switch — fail-open if explicitly disabled
+if [[ "${PRECOMMIT_GATE:-on}" == "off" ]]; then
+  exit 0
+fi
+
+# Shared block logger (no-op if lib missing)
+source "$HOME/.claude/hooks/lib/log-block.sh" 2>/dev/null || true
 
 # Read JSON from stdin
 INPUT=$(cat)
@@ -114,14 +124,40 @@ if echo "$STAGED" | grep -q "supabase/migrations/"; then
   fi
 fi
 
+# ─── /ship Stage 10 enforcement (Phase 8.0.3, 2026-05-23) ───
+# When a /ship run is in progress (.ship/<run>/scope.json exists), Stage 10
+# requires HANDOFF.md + CLAUDE.md updates for scope != S. /system-retro
+# 2026-05-23 found "Process Documentation Left Behind" was the most-common
+# gap on /ship sessions specifically — Stage 10's "AUTO-EXECUTE project-manager"
+# was a fiction (orchestrator did docs inline or skipped them). This warns
+# (not blocks) at commit time when a /ship scope expects docs and they're
+# missing from the staged set.
+SHIP_SCOPE_FILE=$(ls -t .ship/*/scope.json 2>/dev/null | head -1)
+if [ -n "$SHIP_SCOPE_FILE" ] && [ -f "$SHIP_SCOPE_FILE" ]; then
+  SHIP_SCOPE=$(jq -r '.scope // empty' < "$SHIP_SCOPE_FILE" 2>/dev/null)
+  if [ -n "$SHIP_SCOPE" ] && [ "$SHIP_SCOPE" != "S" ]; then
+    # docs/chore/test commits exempt per the IS_CODE_COMMIT logic above
+    if [ "$IS_CODE_COMMIT" = "true" ]; then
+      if ! echo "$STAGED" | grep -qE '(^|/)HANDOFF\.md$'; then
+        WARNINGS="${WARNINGS}\n⚠️  /ship Stage 10: scope=$SHIP_SCOPE expects HANDOFF.md update (not in staged set: ${SHIP_SCOPE_FILE})"
+      fi
+      if ! echo "$STAGED" | grep -qE '(^|/)CLAUDE\.md$'; then
+        WARNINGS="${WARNINGS}\n⚠️  /ship Stage 10: scope=$SHIP_SCOPE expects CLAUDE.md update when shipping new behavior (not in staged set)"
+      fi
+    fi
+  fi
+fi
+
 # ─── Output ───
 
 if [ -n "$WARNINGS" ]; then
-  echo -e "\n📋 Pre-commit warnings:${WARNINGS}\n"
+  echo -e "\n📋 Pre-commit warnings:${WARNINGS}\n" >&2
 fi
 
 if [ -n "$ERRORS" ]; then
-  echo -e "${ERRORS}"
+  echo -e "${ERRORS}" >&2
+  echo "  Kill switch: PRECOMMIT_GATE=off <command>" >&2
+  type log_block >/dev/null 2>&1 && log_block "BLOCKED: pre-commit check failed: $(echo "$ERRORS" | head -c 200)" "PRECOMMIT_GATE"
   exit 2
 fi
 

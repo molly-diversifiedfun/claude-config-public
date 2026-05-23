@@ -15,6 +15,8 @@ Every task — feature, fix, migration, deploy — is NOT done until all applica
 - [ ] For content: grep for 47, banned PM jargon, wrong handle (@your-handle not @your-wrong-handle), pillar/content label match
 - [ ] For code: read the diff, verify it matches spec acceptance criteria
 - [ ] Content QA pipeline run on content files (content-qa-guarded.sh runs automatically, but also spot-check)
+- [ ] **Registry membership verified** (NEW): if the change adds a new MCP tool / watcher / processor / executor / sweeper / capability server / action handler, grep for the new module name in `**/registry.py`, `**/mcp_registry.py`, `**/actions.py`. The wire-up MUST exist in the same commit, AND an integration test MUST assert it. See `rules/common/testing.md` § Registry contract testing. Unit tests on the module alone are NOT sufficient — the dispatch_investigate prod incident (2026-05-17) ate 14+ hours because a fully unit-tested module was never imported into the registry.
+- [ ] **Production smoke after deploy** (NEW): for any change to a tool, surface, or behavior the model invokes, after merge + Railway redeploy, exercise the new path in a real conversation and verify a log line / DB row / Telegram message actually lands. "All tests passed" is not "it works." Skip only for pure docs / refactors with no behavioral surface.
 
 ### Documentation
 - [ ] CLAUDE.md updated if new tables, edge functions, hooks, services, skills, or patterns added

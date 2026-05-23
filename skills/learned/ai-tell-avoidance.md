@@ -7,6 +7,7 @@ projects: [all]
 severity: blocking
 phase: [content, verify, capture]
 last-validated: 2026-05-12
+archetypes: [brand-content, always-on]
 ---
 
 # Pattern: AI-Tell Avoidance

@@ -5,6 +5,16 @@
 #
 # Input: JSON on stdin { "tool_name": "Bash", "tool_input": { "command": "..." } }
 # Output: exit 0 = allow, exit 2 = block with feedback
+#
+# Kill switch: CAPTION_GATE=off <command>
+
+# Kill switch — fail-open if explicitly disabled
+if [[ "${CAPTION_GATE:-on}" == "off" ]]; then
+  exit 0
+fi
+
+# Shared block logger (no-op if lib missing)
+source "$HOME/.claude/hooks/lib/log-block.sh" 2>/dev/null || true
 
 INPUT=$(cat 2>/dev/null)
 TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // ""' 2>/dev/null)
@@ -29,13 +39,15 @@ if echo "$COMMAND" | grep -qi "supabase.*db.*query" && echo "$COMMAND" | grep -q
   fi
 
   # Block freehand caption writes
-  echo "BLOCKED: You're writing captions directly via SQL without using the caption-generator prompt."
-  echo ""
-  echo "RULE: All captions MUST be generated using unstuck/prompts/caption-generator.md"
-  echo "Use: python3 scripts/produce-month.py --stage=captions"
-  echo "Or read the prompt, fill in inputs, and generate properly."
-  echo ""
-  echo "If you're fixing a single caption, read caption-generator.md first and follow the process."
+  echo "BLOCKED: You're writing captions directly via SQL without using the caption-generator prompt." >&2
+  echo "" >&2
+  echo "RULE: All captions MUST be generated using <your-first-brand-slug>/prompts/caption-generator.md" >&2
+  echo "Use: python3 scripts/produce-month.py --stage=captions" >&2
+  echo "Or read the prompt, fill in inputs, and generate properly." >&2
+  echo "" >&2
+  echo "If you're fixing a single caption, read caption-generator.md first and follow the process." >&2
+  echo "  Kill switch: CAPTION_GATE=off <command>" >&2
+  type log_block >/dev/null 2>&1 && log_block "BLOCKED: freehand caption write via SQL without caption-generator prompt" "CAPTION_GATE"
   exit 2
 fi
 
