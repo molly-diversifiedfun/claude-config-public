@@ -18,7 +18,7 @@ HOME = Path.home()
 PERSONAL_DIR = HOME / ".claude" / "skills"
 PLUGIN_CACHE = HOME / ".claude" / "plugins" / "cache"
 
-# Keyword -> archetype heuristics (rough; meant to be edited by you)
+# Keyword -> archetype heuristics (rough; meant to be edited by Molly)
 HEURISTICS = {
     "always-on": ["brainstorm", "plan", "debug", "test", "review", "memory", "thinking",
                   "decision", "documentation", "handoff", "verification"],

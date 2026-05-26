@@ -4,7 +4,7 @@ Usage: /write [content description]
 
 Flow:
 0. **Pre-flight — query MemPalace (NEW Phase 3):**
-   - `mcp__mempalace__mempalace_search` for the topic + brand (e.g., "<your-first-brand> book chapter", "<your-third-brand> portfolio copy")
+   - `mcp__mempalace__mempalace_search` for the topic + brand (e.g., "unstuck book chapter", "outline portfolio copy")
    - Filter by brand wing — fail open per `feedback_mempalace_wing_filter_error_finding_id.md`
    - Pull: voice DNA captures, past performance for similar content type, rejected directions for this brand, banned-phrases evolution, prior series parts (for multi-part work)
    - Surface 3-5 drawers to the user: "Loaded [paths] for voice + prior context"

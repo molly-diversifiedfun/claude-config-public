@@ -133,7 +133,7 @@ claude plugin install seo-audit
 # etc. for each marketplace skill
 ```
 
-Either is fine; the snapshot is just a frozen copy of what was current when `bin/sync.sh` last ran on the primary Mac.
+Either is fine; the snapshot is just a frozen copy of what was current when `bin/sync.sh` last ran on your primary machine.
 
 ## 6. Install plugins
 
@@ -190,10 +190,10 @@ Future steps once it exists:
 
 ## Updates
 
-When the primary Mac edits something:
+When your primary machine edits something:
 
 ```sh
-# On primary Mac
+# On your primary machine
 cd ~/github/claude-config
 ./bin/sync.sh
 git add -A

@@ -1,101 +1,87 @@
-# Rules System (CARL)
+# Rules System
 
-Rules are always-on context that gets injected into every session. They cover coding conventions, content voice, brand constraints, testing requirements, security guidelines, and anything else that should be top-of-mind regardless of the task.
+The repo has TWO complementary rule mechanisms:
 
-The auto-injection mechanism is **CARL** — a UserPromptSubmit hook (`hooks/carl-loader.sh`) that reads the user's prompt, decides which domain rules apply, and prepends the matching rule files to context.
+1. **`rules/`** — static markdown rules referenced from `CLAUDE.md`. Loaded every session as part of the preamble. Universal coding/git/testing/security conventions.
+2. **`skills/learned/`** — dynamic archetype-filtered patterns. Loaded by `hooks/archetype-injector.sh` (UserPromptSubmit) based on project archetype + severity.
 
-## Rule domains
+**Historical note:** A third mechanism called CARL (Context Augmentation & Reinforcement Layer) previously provided 11 domains with 130 keyword-triggered rules. In the 2026-05-26 simplification, ~110 rules were found redundant with learned patterns, and ~25 unique rules were migrated. CARL now only handles **star-commands** (`*dev`, `*review`, `*brief`).
+
+## `rules/` — static domains
 
 | Domain | What | Always-on? |
 |---|---|---|
 | `common/` | Universal rules — coding-style, git-workflow, testing, security, agents, performance, patterns, definition-of-done | Yes |
+| `content-system/` | Content production rules — caption-generation-enforcement, content-plan-enforcement | When content commands/skills fire |
 | `python/` | Python-specific style rules | When user is working in Python |
-| `typescript/` | TypeScript-specific style rules | When user is working in TS |
+| `typescript/` | TypeScript-specific style rules + patterns | When user is working in TS |
 
-> Note: the original private config carried a fourth `<your-content-pipeline>/` domain with brand-specific content production rules (caption-generation-enforcement, content-plan-enforcement). It was stripped from this public snapshot. If you have a content production pipeline, add your own `<your-content-pipeline>/` rules and register the domain in `hooks/carl-loader.sh`.
+## `skills/learned/` — dynamic learned patterns (~44 files)
+
+Each pattern has YAML frontmatter:
+
+```yaml
+---
+name: pattern-name
+description: one-line summary
+severity: blocking | warning
+archetypes: [web-app, telegram-bot, always-on, ...]
+last-validated: 2026-05-26
+---
+```
+
+**How they load:** `archetype-injector.sh` resolves cwd → project archetype (from `projects.yaml`), then:
+- All `severity: blocking` patterns load unconditionally (5 patterns)
+- `severity: warning` patterns load only when their `archetypes` field includes the current project's archetype
+
+**Blocking patterns (5, always-on):**
+- `never-fabricate` — don't invent stories, numbers, or biographical details
+- `secrets-routing` — secrets go direct to deploy targets, never through chat
+- `auto-mode-classifier-discipline` — don't retry denied tool calls in loops
+- `verify-before-commit` — read agent output before staging; smoke after deploy
+- `cli-integration-discipline` — measure cost/latency before wrapping external CLIs
+
+**Warning patterns (~39, archetype-filtered) — examples:**
+- `ai-tell-avoidance` — never use 47, vary numbers, no AI filler phrases (brand-content, web-app)
+- `n8n-build-patterns` — no fetch() in Code nodes, mock UX first (telegram-bot, infra-config)
+- `design-color-discipline` — Unstuck brand colors + typography (web-app, brand-content)
+- `context-brackets` — adapt behavior for FRESH/MODERATE/DEPLETED context (always-on)
+- `check-before-create` — ls target dir before creating new files (always-on)
+
+## Star-commands
+
+Star-commands set behavioral modes. Type `*word` anywhere in your prompt:
+
+| Command | What it does |
+|---|---|
+| `*dev` | Code-first mode: show code, minimize explanation, run tests |
+| `*review` | Code review mode: flag security, note performance, respect existing style |
+| `*brief` | Bullet points only, max 5 items, skip explanations |
+| `*plan` | Planning mode: explore codebase, present options with tradeoffs, get approval |
+| `*discuss` | Brainstorm mode: explore approaches, ask clarifying questions |
+| `*debug` | Debug mode: gather error context, form hypothesis, test systematically |
+| `*explain` | Teaching mode: high-level overview first, concrete examples, build incrementally |
+
+Star-commands are loaded by `hooks/carl-loader.sh` from `carl/commands`.
 
 ## What's in `common/`
 
 | File | What |
 |---|---|
-| `coding-style.md` | Immutability requirements, file organization (200-400 lines typical, 800 max), error handling, input validation, code quality checklist |
-| `git-workflow.md` | Conventional Commits format, PR workflow, feature implementation order (plan → build+tests → review → DoD → push) |
-| `testing.md` | Min 80% coverage, TDD workflow, behavioral specs in `docs/test-specs/`, E2E auth pattern |
-| `security.md` | Mandatory security checks before commit, secret management, response protocol |
-| `agents.md` | Agent roster, slash commands, parallel execution patterns, hooks system |
-| `performance.md` | Model selection strategy (haiku/sonnet/opus), context window management, extended thinking + plan mode |
-| `patterns.md` | Skeleton projects, design patterns (repository, API response envelope) |
-| `definition-of-done.md` | DoD checklist enforced by `session-retrospective.sh` — code/verification/docs/tracking/decisions/deploy |
-
-## How CARL decides which rules to load
-
-`hooks/carl-loader.sh` runs at every UserPromptSubmit. It:
-
-1. Always loads `rules/common/*.md` (universal)
-2. Scans the user's prompt for triggers:
-   - File extensions (`.py` → python rules; `.ts`/`.tsx` → typescript rules)
-   - Star-commands (`*dev` → development rules; `*review` → review rules; `*brief` → brief writing rules)
-   - Topic keywords (e.g., the private config had "caption" → <your-content-pipeline> rules; you can register your own)
-3. Matches CLAUDE.md "RIGOR" triggers (settings.json, schema, manifest, hooks, plugins, MCP) → loads stricter validation rules
-4. Concatenates the matched rule files into a system context block
-
-The result: relevant rules show up automatically; irrelevant ones don't bloat context.
-
-## Star-commands
-
-CARL recognizes star-prefixed words as load-domain triggers:
-
-- `*dev` → loads dev domain rules
-- `*review` → loads review domain rules
-- `*brief` → loads brief writing rules
-- `*content` → was a <your-content-pipeline> trigger in the private config; not active in this public snapshot (no <your-content-pipeline> rules ship here)
-
-Use them by prefixing your message: "*dev help me refactor the auth flow" → CARL loads the dev rule set.
-
-## Rigor triggers
-
-Editing certain files raises the rule rigor automatically:
-
-- `settings.json`, `settings.local.json`
-- Config files (`tsconfig.json`, `pyproject.toml`, etc.)
-- Database schema files
-- `CLAUDE.md`
-- Plugin manifests
-- MCP configurations
-- Hooks
-
-When CARL detects an edit to one of these, it injects extra validation rules — slower but safer.
+| `coding-style.md` | Immutability, file organization (200-400 lines, 800 max), error handling, input validation |
+| `git-workflow.md` | Conventional Commits, PR workflow, feature implementation order |
+| `testing.md` | 80% coverage, TDD workflow, behavioral specs, registry contract testing, production smoke |
+| `security.md` | Mandatory security checks, secret management, response protocol |
+| `agents.md` | Agent roster, slash commands, parallel execution, hooks system |
+| `performance.md` | Model selection (Haiku/Sonnet/Opus), context management, extended thinking |
+| `patterns.md` | Skeleton projects, repository pattern, API response envelope |
+| `definition-of-done.md` | DoD checklist — code, verification, docs, tracking, decisions, deploy |
 
 ## Why this design
 
-Rules vs skills vs hooks:
-
 - **Rules** are *passive* and *always-on* (within their domain). They shape the model's behavior baseline.
+- **Learned patterns** are *passive* and *archetype-filtered*. They inject relevant corrections based on what project you're in.
 - **Skills** are *active* and *trigger-based*. They add capabilities when the user's request matches.
-- **Hooks** are *imperative* and *lifecycle-bound*. They execute scripts at specific events (regardless of whether the model "remembers" to).
+- **Hooks** are *imperative* and *lifecycle-bound*. They execute scripts at specific events.
 
-Use rules for things you want the model to *know* always. Use skills for things you want the model to *do* when matched. Use hooks for things you want to happen *every time* a lifecycle event fires.
-
-## Adding a new rule
-
-For a `common/` rule:
-
-```sh
-# Edit ~/.claude/rules/common/<name>.md
-# Document the principle, examples, when it applies, what NOT to do
-# Sync to repo:
-cd ~/github/claude-config
-./bin/sync.sh
-git add -A && git commit -m "feat(rules): add <name>" && git push
-```
-
-For a new domain:
-
-```sh
-# Create ~/.claude/rules/<domain>/
-# Add rule files
-# Update CARL to recognize the new domain (edit hooks/carl-loader.sh)
-# Sync to repo
-```
-
-The CARL loader's domain-detection logic lives in `hooks/carl-loader.sh` — edit there to register new triggers for a domain.
+Use rules for things you want the model to *know* always. Use learned patterns for project-specific corrections. Use skills for things you want the model to *do* when matched. Use hooks for things you want to happen *every time* a lifecycle event fires.

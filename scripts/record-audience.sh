@@ -8,7 +8,7 @@
 
 set -u
 
-KEY="${1:?missing project_deliverable key (e.g. <your-web-app-1>_carousel)}"
+KEY="${1:?missing project_deliverable key (e.g. unstuckwithmolly_carousel)}"
 AUDIENCE="${2?missing audience argument (use empty string \"\" to reset)}"
 
 STATE_DIR="$HOME/.claude/state"

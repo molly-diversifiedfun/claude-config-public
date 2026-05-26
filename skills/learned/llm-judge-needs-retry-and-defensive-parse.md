@@ -4,7 +4,7 @@ description: "LLM-as-judge pipelines need BOTH a retry-with-stricter-prompt AND 
 type: learned-pattern
 applies-to: [llm-as-judge, testing, eval-harness, content-qa, dispatch-routers, prompt-engineering, python]
 projects: [all]
-severity: blocking
+severity: warning
 phase: [build, test, verification]
 last-validated: 2026-05-23
 archetypes: [telegram-bot, content-pipeline, always-on]

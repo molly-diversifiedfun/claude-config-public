@@ -49,7 +49,7 @@ Specs written hours/days earlier drift against the real world: PyPI versions mov
 ## Vercel/Railway/build deploy gotchas (Content OS, 2026-04-30)
 
 - **tsc is stricter than vite build.** Vercel runs `tsc -b && vite build`. Local `vite build` skips tsc. Always run `npx tsc -b --noEmit` before deploying.
-- **Symlinks break Vercel builds.** `public/<your-app> → ../` works locally, ENOENT on Vercel. Remove symlinks from `public/`.
+- **Symlinks break Vercel builds.** `public/unstuck → ../` works locally, ENOENT on Vercel. Remove symlinks from `public/`.
 - **VITE_ env vars must be set in deploy target.** Without them the app renders blank (Supabase client throws at startup).
 - **Supabase generated types lag schema.** After adding tables, regen types or `as any` cast on `supabase.from()`.
 - **`vite envDir`** pointing to parent dir works locally but not on Vercel — use `__dirname`.

@@ -37,7 +37,7 @@ This skill is about **whether a human can follow through**, not whether the code
 Before scoring any rung, the skill MUST verify it knows two things:
 
 1. **Audience** — who is the person expected to follow through? (the user
-   of the system being audited, not you)
+   of the system being audited, not Molly)
 2. **Intent** — what does "follow through" mean here? (the target behavior
    you're scoring against)
 
@@ -45,7 +45,7 @@ Before scoring any rung, the skill MUST verify it knows two things:
 
 Attempt to infer both from:
 - The artifact itself (frontmatter, headers, explicit "for X" statements,
-  brand path like `<your-web-app-1>/`, audience field)
+  brand path like `unstuckwithmolly/`, audience field)
 - The user's prompt ("audit my onboarding flow for first-time devs" → both
   audience and intent stated)
 - Conversation context in this session

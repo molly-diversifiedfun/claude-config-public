@@ -1,10 +1,52 @@
 # macOS
 .DS_Store
 
+# Personal infra references — kept out of git after 2026-05-23 history scrub
+# (carl/n8n contains live Supabase URL + n8n instance + credential handles)
+carl/n8n
+
 # Editor
 .vscode/
 .idea/
 
-# Sync artifacts (in case install.sh creates any)
+# Sync artifacts
 *.bak
 *.bak-*
+
+# Anything that should never end up here even if rsync slips
+settings.json
+.credentials.json
+sessions/
+projects/
+cache/
+backups/
+checkpoints/
+file-history/
+paste-cache/
+session-env/
+shell-snapshots/
+tasks/
+telemetry/
+todos/
+statsig/
+history.jsonl
+stats-cache.json
+plugins/
+memories/
+/plans/
+/specs/
+scheduled-tasks/
+teams/
+debug/
+homunculus/
+double-shot-latte/
+downloads/
+get-shit-done/
+gsd-file-manifest.json
+package.json
+.last-cleanup
+mcp-needs-auth-cache.json
+mcp-refresh-plugin_*
+vercel-plugin-*
+ide/
+.claude/

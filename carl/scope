@@ -1,8 +1,0 @@
-# CARL Scope Domain
-# Loaded when prompt contains scope tokens (all/every/each/across/both/multiple)
-
-SCOPE_RULE_1=If the user's prompt contains scope tokens ("all X", "every X", "each X", "across X", "both X", "multiple X") where X is a collection noun (brands, projects, posts, files, deliverables, chapters, clients, scripts, tools, hooks, rules, agents, mechanisms, items, options, channels, platforms, audiences, users, skills, domains, patterns, memories, learnings), you MUST restate the full scope as a "Scope confirmed: <list>" line before any tool use. List every item explicitly. Never silently narrow to a subset to make the task more tractable.
-
-SCOPE_RULE_2=When delegating work to a subagent, the agent prompt MUST include a "Scope: [item1, item2, ...]" line that matches the original user request. The agent-batch-validator hook blocks dispatch if scope tokens appeared in the user message but the agent prompt does not restate scope.
-
-SCOPE_RULE_3=If the scope is ambiguous (e.g., "all the relevant ones" without enumeration), ask the user to enumerate via AskUserQuestion before acting. Do not guess which subset they meant.

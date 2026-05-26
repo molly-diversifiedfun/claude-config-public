@@ -12,7 +12,7 @@ archetypes: [content-pipeline, brand-content, always-on]
 
 # OpenAI Responses API Is the Honest Smoke Surface for ChatGPT Custom GPTs
 
-**Origin:** 2026-05-20 paid Ship It Kit GPT ship (`~/github/<your-product-pipeline>/chatgpt-apps/paid-ship-it-kit/`). First smoke ran via the Anthropic API with the full 461KB knowledge bundle crammed into the `system` parameter. Honest in spirit, dishonest in shape — the live GPT runtime doesn't see knowledge as one giant blob.
+**Origin:** 2026-05-20 paid Ship It Kit GPT ship (`~/github/ship-it-system/chatgpt-apps/paid-ship-it-kit/`). First smoke ran via the Anthropic API with the full 461KB knowledge bundle crammed into the `system` parameter. Honest in spirit, dishonest in shape — the live GPT runtime doesn't see knowledge as one giant blob.
 
 ## The runtime gap
 

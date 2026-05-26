@@ -1,62 +1,51 @@
 #!/bin/bash
-# session-retrospective.sh — Stop hook
-# Blocks session end if DoD items are incomplete.
-# Checks: HANDOFF.md, TASKS.md, learnings, enforcement, tests, docs.
-# Outputs JSON: {} to allow, {"decision":"block","reason":"..."} to block.
+# session-retrospective.sh — Stop hook (redesigned 2026-05-26)
+# Grace mechanism: first miss = soft nudge, 2+ consecutive = block.
+# Checks: HANDOFF.md freshness + TASKS.md freshness (the two that matter).
+# Outputs JSON: {} to allow, {"decision":"block",...} to block.
 # Kill switch: RETROSPECTIVE_GATE=off → exit 0 with {} (no-op).
-# (CHECK 8 synthesis cadence has its own SYNTHESIS_GATE=off; this gate
-#  short-circuits the whole hook.)
 
 if [ "${RETROSPECTIVE_GATE:-on}" = "off" ]; then
   echo '{}'
   exit 0
 fi
 
-COUNTER_FILE="$HOME/.claude/checkpoints/.tool_count"
-ACTIVITY_LOG="$HOME/.claude/checkpoints/activity.jsonl"
-
-# Shared block logger (no-op if lib missing)
 source "$HOME/.claude/hooks/lib/log-block.sh" 2>/dev/null || true
 
-# Ancestor-walk to find PROJECT_ROOT: nearest dir with BOTH HANDOFF.md AND a
-# configured memory dir under ~/.claude/projects/. Falls back to git root, then PWD.
-# Prevents cwd drift into a sub-repo from triggering false-positive
-# "HANDOFF stale" / "no learnings" when the workspace HANDOFF/memory live one
-# or more levels up. See feedback_cwd_drift_breaks_stop_hook_dod.md.
+COUNTER_FILE="$HOME/.claude/checkpoints/.tool_count"
+MISS_FILE="$HOME/.claude/checkpoints/.dod_consecutive_misses"
+
+# Resolve PROJECT_ROOT — outermost ancestor with HANDOFF.md + memory dir
 MAX_ANCESTOR_LEVELS=5
 PROJECT_ROOT=""
-DIR="$PWD"
-for _ in $(seq 0 "$MAX_ANCESTOR_LEVELS"); do
-  if [ -f "$DIR/HANDOFF.md" ]; then
-    CAND_KEY=$(echo "$DIR" | sed 's|[/.]|-|g')
-    if [ -d "$HOME/.claude/projects/${CAND_KEY}/memory" ]; then
-      PROJECT_ROOT="$DIR"
-      break
+if [ -n "${CLAUDE_WORKSPACE_ROOT:-}" ] && [ -d "$CLAUDE_WORKSPACE_ROOT" ]; then
+  PROJECT_ROOT="$CLAUDE_WORKSPACE_ROOT"
+else
+  DIR="$PWD"
+  for _ in $(seq 0 "$MAX_ANCESTOR_LEVELS"); do
+    if [ -f "$DIR/HANDOFF.md" ]; then
+      CAND_KEY=$(echo "$DIR" | sed 's|[/.]|-|g')
+      if [ -d "$HOME/.claude/projects/${CAND_KEY}/memory" ]; then
+        PROJECT_ROOT="$DIR"
+      fi
     fi
-  fi
-  PARENT=$(dirname "$DIR")
-  [ "$PARENT" = "$DIR" ] && break
-  DIR="$PARENT"
-done
-
-# Fallback chain: git root → PWD
+    PARENT=$(dirname "$DIR")
+    [ "$PARENT" = "$DIR" ] && break
+    DIR="$PARENT"
+  done
+fi
 if [ -z "$PROJECT_ROOT" ]; then
   PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")
 fi
 
-# Derive project memory dir from resolved PROJECT_ROOT
-PROJECT_KEY=$(echo "$PROJECT_ROOT" | sed 's|[/.]|-|g')
-MEMORY_DIR="$HOME/.claude/projects/${PROJECT_KEY}/memory"
 HANDOFF="$PROJECT_ROOT/HANDOFF.md"
 TASKS="$PROJECT_ROOT/TASKS.md"
 
-# Check tool count
+# Low activity sessions — always allow, reset miss counter
 COUNT=0
 if [ -f "$COUNTER_FILE" ]; then
   COUNT=$(cat "$COUNTER_FILE" 2>/dev/null || echo "0")
 fi
-
-# Low activity sessions — allow without checks
 if [ "$COUNT" -lt 20 ]; then
   echo '{}'
   exit 0
@@ -65,191 +54,48 @@ fi
 TODAY=$(date +%Y-%m-%d)
 REASONS=""
 
-# ============================================================
 # CHECK 1: HANDOFF.md freshness
-# ============================================================
-HANDOFF_STALE=false
 if [ -f "$HANDOFF" ]; then
   HANDOFF_MOD=$(stat -f '%Sm' -t '%Y-%m-%d' "$HANDOFF" 2>/dev/null || date +%Y-%m-%d)
   if [ "$HANDOFF_MOD" != "$TODAY" ]; then
-    HANDOFF_STALE=true
+    REASONS="${REASONS}HANDOFF.md not updated today. "
   fi
 else
-  HANDOFF_STALE=true
+  REASONS="${REASONS}No HANDOFF.md found. "
 fi
 
-if [ "$HANDOFF_STALE" = "true" ]; then
-  REASONS="${REASONS}HANDOFF.md not updated today. "
-fi
-
-# ============================================================
-# CHECK 2: TASKS.md freshness (if it exists)
-# ============================================================
+# CHECK 2: TASKS.md freshness
 if [ -f "$TASKS" ]; then
   TASKS_MOD=$(stat -f '%Sm' -t '%Y-%m-%d' "$TASKS" 2>/dev/null || date +%Y-%m-%d)
   if [ "$TASKS_MOD" != "$TODAY" ]; then
-    REASONS="${REASONS}TASKS.md not updated today ($COUNT tool uses in session). "
+    REASONS="${REASONS}TASKS.md not updated today. "
   fi
 fi
 
-# ============================================================
-# CHECK 3: Learnings saved to memory
-# ============================================================
-LEARNINGS_SAVED=false
-if [ -d "$MEMORY_DIR" ]; then
-  RECENT=$(find "$MEMORY_DIR" -name "*.md" -newermt "$TODAY" 2>/dev/null | head -1)
-  if [ -n "$RECENT" ]; then
-    LEARNINGS_SAVED=true
-  fi
-fi
-
-if [ "$LEARNINGS_SAVED" = "false" ]; then
-  REASONS="${REASONS}No learnings saved to memory ($COUNT tool uses). "
-fi
-
-# ============================================================
-# CHECK 4: Enforcement created (if learnings saved + commits made)
-# ============================================================
-ENFORCEMENT_CREATED=false
-ENFORCEMENT_LOCATIONS=(
-  "$HOME/.claude/hooks"
-  "$HOME/.claude/rules"
-  "$HOME/.claude/skills/learned"
-  "$PROJECT_ROOT/eslint.config.js"
-  "$PROJECT_ROOT/vitest.config.ts"
-  "$PROJECT_ROOT/biome.json"
-  "$HOME/.carl"
-)
-for loc in "${ENFORCEMENT_LOCATIONS[@]}"; do
-  if [ -e "$loc" ]; then
-    if [ -d "$loc" ]; then
-      MODIFIED=$(find "$loc" -name "*.sh" -o -name "*.md" -o -name "*.json" | xargs stat -f '%Sm %N' -t '%Y-%m-%d' 2>/dev/null | grep "^$TODAY" | head -1)
-    else
-      MOD_DATE=$(stat -f '%Sm' -t '%Y-%m-%d' "$loc" 2>/dev/null || echo "")
-      if [ "$MOD_DATE" = "$TODAY" ]; then
-        MODIFIED="$loc"
-      fi
-    fi
-    if [ -n "$MODIFIED" ]; then
-      ENFORCEMENT_CREATED=true
-      break
-    fi
-  fi
-done
-
-COMMITS_TODAY=$(git -C "$PROJECT_ROOT" log --oneline --since="$TODAY" 2>/dev/null | wc -l | tr -d ' ')
-if [ "$LEARNINGS_SAVED" = "true" ] && [ "$ENFORCEMENT_CREATED" = "false" ] && [ "$COMMITS_TODAY" -gt 0 ]; then
-  REASONS="${REASONS}Learnings saved but no enforcement created (hook/rule/config/learned). "
-fi
-
-# ============================================================
-# CHECK 5: Tests run (if commits were made today)
-# ============================================================
-if [ "$COMMITS_TODAY" -gt 0 ] && [ -f "$ACTIVITY_LOG" ]; then
-  # Look for test commands in today's activity
-  TESTS_RUN=$(grep "$TODAY" "$ACTIVITY_LOG" 2>/dev/null | grep -i 'npm.*test\|vitest\|jest\|pytest\|playwright' | head -1)
-  if [ -z "$TESTS_RUN" ]; then
-    REASONS="${REASONS}$COMMITS_TODAY commit(s) today but no test run found in activity log. "
-  fi
-fi
-
-# ============================================================
-# CHECK 6: Lint run (if commits were made today)
-# ============================================================
-if [ "$COMMITS_TODAY" -gt 0 ] && [ -f "$ACTIVITY_LOG" ]; then
-  LINT_RUN=$(grep "$TODAY" "$ACTIVITY_LOG" 2>/dev/null | grep -i 'npm run check\|biome\|eslint\|tsc --noEmit' | head -1)
-  if [ -z "$LINT_RUN" ]; then
-    REASONS="${REASONS}$COMMITS_TODAY commit(s) today but no lint/type check found in activity log. "
-  fi
-fi
-
-# ============================================================
-# CHECK 7: Agent output verification (if agents were used)
-# ============================================================
-if [ -f "$ACTIVITY_LOG" ]; then
-  AGENTS_TODAY=$(grep "$TODAY" "$ACTIVITY_LOG" 2>/dev/null | grep '"tool":"Agent"' | wc -l | tr -d ' ')
-  if [ "$AGENTS_TODAY" -gt 0 ]; then
-    # Check if Read was used after the last Agent call (proxy for "reviewed output")
-    LAST_AGENT_TS=$(grep "$TODAY" "$ACTIVITY_LOG" 2>/dev/null | grep '"tool":"Agent"' | tail -1 | grep -o '"ts":"[^"]*"' | head -1)
-    READS_AFTER=$(grep "$TODAY" "$ACTIVITY_LOG" 2>/dev/null | grep '"tool":"Read"' | grep -c "$(echo "$LAST_AGENT_TS" | cut -c7-16)" 2>/dev/null || echo "0")
-    # This is a heuristic — if no Reads happened in the same minute window as/after the last Agent, flag it
-    if [ "$AGENTS_TODAY" -gt 2 ] && [ "$READS_AFTER" -lt 1 ]; then
-      REASONS="${REASONS}$AGENTS_TODAY agent invocations today — verify agent output was reviewed before staging. "
-    fi
-  fi
-fi
-
-# ============================================================
-# CHECK 8: Synthesis cadence (Phase 6.1)
-# ============================================================
-# Block when accumulated feedback drift crosses a threshold without learned/
-# synthesis. Threshold: ≥10 new feedback files since newest learned/*.md
-# (excluding SKILL.md) OR ≥7 days since newest learned/*.md mtime.
-#
-# Kill switch: SYNTHESIS_GATE=off claude
-#
-# Filesystem-only — no MCP call (Stop hook must stay <1s + work offline).
-# Fail-open on any sub-step error: accept that drift goes unblocked for
-# this session rather than block on a hook bug.
-if [[ "${SYNTHESIS_GATE:-on}" != "off" ]]; then
-  LEARNED_DIR_S="$HOME/.claude/skills/learned"
-  MEMORY_DIRS_S=(
-    "$HOME/.claude/projects/<your-workspace>/memory"
-    "$HOME/.claude/projects/<your-content-workspace>/memory"
-    "$HOME/.claude/projects/<your-content-workspace-2>/memory"
-    "$HOME/.claude/projects/<your-product-workspace>/memory"
-    "$HOME/.claude/projects/<your-workspace>-<your-project-2>/memory"
-    "$HOME/.claude/projects/<your-side-project>/memory"
-    "$HOME/.claude/projects/<your-saas-project>/memory"
-  )
-
-  # Newest learned/*.md mtime, excluding SKILL.md
-  NEWEST_LEARNED_S=0
-  if [ -d "$LEARNED_DIR_S" ]; then
-    for f in "$LEARNED_DIR_S"/*.md; do
-      [ -f "$f" ] || continue
-      [ "$(basename "$f")" = "SKILL.md" ] && continue
-      TS=$(stat -f '%m' "$f" 2>/dev/null || stat -c '%Y' "$f" 2>/dev/null || echo "0")
-      [ "$TS" -gt "$NEWEST_LEARNED_S" ] && NEWEST_LEARNED_S=$TS
-    done
-  fi
-
-  # Count feedback files newer than newest learned/
-  NEW_FEEDBACK_S=0
-  for dir in "${MEMORY_DIRS_S[@]}"; do
-    [ -d "$dir" ] || continue
-    for f in "$dir"/feedback_*.md; do
-      [ -f "$f" ] || continue
-      TS=$(stat -f '%m' "$f" 2>/dev/null || stat -c '%Y' "$f" 2>/dev/null || echo "0")
-      [ "$TS" -gt "$NEWEST_LEARNED_S" ] && NEW_FEEDBACK_S=$((NEW_FEEDBACK_S + 1))
-    done
-  done
-
-  # Days since newest learned/
-  NOW_S=$(date +%s)
-  if [ "$NEWEST_LEARNED_S" -gt 0 ]; then
-    DAYS_SINCE_S=$(( (NOW_S - NEWEST_LEARNED_S) / 86400 ))
-  else
-    DAYS_SINCE_S=999
-  fi
-
-  # Trip either threshold
-  if [ "$NEW_FEEDBACK_S" -ge 10 ] || [ "$DAYS_SINCE_S" -ge 7 ]; then
-    NEWEST_DATE_S=$(date -r "$NEWEST_LEARNED_S" +%Y-%m-%d 2>/dev/null || echo "unknown")
-    REASONS="${REASONS}Synthesis overdue: ${NEW_FEEDBACK_S} new feedback files since ${NEWEST_DATE_S} (${DAYS_SINCE_S}d). Run /promote to triage. Kill switch: SYNTHESIS_GATE=off claude. "
-  fi
-fi
-
-# ============================================================
-# DECISION
-# ============================================================
-if [ -n "$REASONS" ]; then
-  REASONS_ESCAPED=$(echo "$REASONS" | sed 's/"/\\"/g')
-  type log_block >/dev/null 2>&1 && log_block "Stop hook block: DoD INCOMPLETE: $REASONS" ""
-  echo "{\"decision\":\"block\",\"reason\":\"DoD INCOMPLETE: ${REASONS_ESCAPED}Walk the Definition of Done (rules/common/definition-of-done.md) before ending session.\"}"
+# GRACE MECHANISM
+if [ -z "$REASONS" ]; then
+  # All checks pass — reset consecutive miss counter
+  echo "0" > "$MISS_FILE" 2>/dev/null
+  echo '{}'
   exit 0
 fi
 
-# All checks pass
-echo '{"systemMessage":"DoD verified: HANDOFF current, TASKS updated, learnings saved, enforcement created, tests run, lint passed."}'
+# Something missed — read consecutive miss count
+MISSES=0
+if [ -f "$MISS_FILE" ]; then
+  MISSES=$(cat "$MISS_FILE" 2>/dev/null || echo "0")
+fi
+MISSES=$((MISSES + 1))
+echo "$MISSES" > "$MISS_FILE" 2>/dev/null
+
+if [ "$MISSES" -le 1 ]; then
+  # First miss: soft nudge (systemMessage, not block)
+  echo "{\"systemMessage\":\"DoD nudge (miss 1): ${REASONS}Update before next session end or it will block. Kill: RETROSPECTIVE_GATE=off\"}"
+  exit 0
+fi
+
+# 2+ consecutive misses: hard block
+REASONS_ESCAPED=$(echo "$REASONS" | sed 's/"/\\"/g')
+type log_block >/dev/null 2>&1 && log_block "Stop hook block: DoD INCOMPLETE (${MISSES} consecutive): $REASONS" ""
+echo "{\"decision\":\"block\",\"reason\":\"DoD INCOMPLETE (${MISSES} consecutive misses): ${REASONS_ESCAPED}Update HANDOFF.md and TASKS.md before ending session. Kill: RETROSPECTIVE_GATE=off\"}"
 exit 0

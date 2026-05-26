@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # sync.sh — pull current state of ~/.claude/ INTO this repo.
 #
-# Inverse of install.sh. Run on the primary Mac after editing skills/agents/
+# Inverse of install.sh. Run on your primary machine after editing skills/agents/
 # commands/rules/hooks live in ~/.claude/, to capture the changes back into
 # the repo before commit + push.
 #
@@ -42,6 +42,17 @@ if [ -d "$SOURCE/scripts" ]; then
   rsync -a --delete --exclude='.DS_Store' "$SOURCE/scripts/" "$REPO_DIR/scripts/"
 fi
 
+# CARL lives at ~/.carl/, not ~/.claude/. Sync it too if present.
+# Exclude carl/n8n because it contains live infrastructure identifiers
+# (Supabase project URL, n8n instance URL, credential handles). The repo
+# history was scrubbed of these on 2026-05-23 (tag pre-scrub-2026-05-23
+# preserves the pre-scrub state locally). Keep the live file intact for
+# production use; just don't replicate it to the repo.
+if [ -d "$HOME/.carl" ]; then
+  echo "→ syncing $HOME/.carl/ → repo/carl/"
+  rsync -a --delete --exclude='.DS_Store' --exclude='n8n' "$HOME/.carl/" "$REPO_DIR/carl/"
+fi
+
 echo "→ copying CLAUDE.md → repo/CLAUDE.md"
 cp "$SOURCE/CLAUDE.md" "$REPO_DIR/CLAUDE.md"
 
@@ -55,8 +66,8 @@ fi
 # $HOME embedded). Replaces with $HOME so they're portable.
 echo "→ sanitizing absolute paths in hooks/"
 find "$REPO_DIR/hooks" -type f \( -name '*.sh' -o -name '*.js' \) | while read -r f; do
-  if grep -q '$HOME' "$f"; then
-    sed -i.bak 's|$HOME|$HOME|g' "$f"
+  if grep -q '/Users/molly\.shelestak' "$f"; then
+    sed -i.bak 's|/Users/molly\.shelestak|$HOME|g' "$f"
     rm "$f.bak"
     echo "  - sanitized: $(basename "$f")"
   fi

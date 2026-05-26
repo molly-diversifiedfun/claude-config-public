@@ -27,7 +27,7 @@ The per-project memory dirs (`~/.claude/projects/*/memory/`) are WRITE-ONLY as o
 
 ## Wing-filter fail-open (REQUIRED for all queries)
 
-MemPalace v3.3.5+ has an index-drift bug: `mcp__mempalace__mempalace_search` with a `wing:` filter sometimes errors with `Error finding id` even when the wing has hundreds of drawers (confirmed on `<your-web-app-1>` wing with 503 drawers on 2026-05-19).
+MemPalace v3.3.5+ has an index-drift bug: `mcp__mempalace__mempalace_search` with a `wing:` filter sometimes errors with `Error finding id` even when the wing has hundreds of drawers (confirmed on `unstuckwithmolly` wing with 503 drawers on 2026-05-19).
 
 **Rule:** ALWAYS retry without the wing filter on error. Never let a wing-filter error block recall.
 
@@ -76,7 +76,7 @@ This prevents regression to v1 if someone edits the script and accidentally remo
 ## Query discipline: when to call MemPalace mid-session
 
 Call `mcp__mempalace__mempalace_search` when the prompt mentions:
-- A project name (<your-personal-ai-project>, <your-agent-project>, <your-project-1>, <your-web-app-1>, <your-content-pipeline>, etc.) → narrow with wing filter (with fail-open)
+- A project name (<your-personal-ai-project>, <your-agent-project>, <your-project-1>, unstuckwithmolly, content-system, etc.) → narrow with wing filter (with fail-open)
 - Recall signals: "remember when", "previously", "have we", "did we discuss", "background on", "last time"
 - Recipe names: Gumroad, Telegram, Supabase, n8n, Notion, Vercel, Railway, PostHog, Buffer, Stripe
 - Conflict signals: "but didn't we decide X?", "I thought we said Y"
@@ -107,7 +107,7 @@ If MemPalace says X and current code/git state says Y, trust the current state. 
 
 **Target: 22 wings** (14 project + 7 infra + 1 sessions). Pre-Phase-5: 37.
 
-**Project wings (14):** `<your-content-pipeline>`, `<your-web-app-1>`, `<your-agent-project>`, `<your-bot>`, `<your-analytics-dash>`, `<your-video-pipeline>`, `<your-bot-1>`, `<your-project-2>`, `<your-app-3>`, `<your-product-pipeline>`, `<your-marketing-stack>`, `<your-product-pipeline>`, `moa-debate`, `<your-app-rebrand-source>`.
+**Project wings (14):** `content-system`, `unstuckwithmolly`, `<your-agent-project>`, `nancy`, `gig-analyzer-dash`, `video-prompt`, `shipitwithmolly`, `<your-project-2>`, `justshipitapp`, `theshipitsystem`, `marketing-os`, `ship-it-system`, `moa-debate`, `conscious-shipping`.
 
 **Infrastructure wings (7):** `claude-config`, `claude-skills`, `claude-code-toolkit`, `claude-config-public`, `learned`, `brainstorms`, `github`.
 

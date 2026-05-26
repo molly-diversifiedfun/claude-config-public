@@ -4,7 +4,7 @@ description: Orchestrator gathers context and delegates. Use existing installed 
 type: learned-pattern
 applies-to: [delegation, process]
 projects: [all]
-severity: blocking
+severity: warning
 phase: [pre-flight, brainstorm, define, explore, build]
 trigger: [agent-routing, build-vs-reuse, pm-vs-engineer]
 last-validated: 2026-05-20

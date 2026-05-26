@@ -18,7 +18,7 @@ archetypes: [brand-content]
 
 Opus 4.7 emitted the right structural tokens (`**Do this:**`, `**Why:**`) — LAYER 6.5 was loaded and parsing. The failure was on the sub-rule "ONE sentence":
 
-> `**Do this:** Run /<your-first-brand-coach> discovery — your project shape (4 years of notes → guide) lands cleanly in Path 3 (Resurrection) or Path 2 (have idea, need plan), and Discovery picks the right one in 5 min.`
+> `**Do this:** Run /unstuck discovery — your project shape (4 years of notes → guide) lands cleanly in Path 3 (Resurrection) or Path 2 (have idea, need plan), and Discovery picks the right one in 5 min.`
 
 Grammatically *one* sentence. Functionally a multi-clause stack with parenthetical + em-dash join + trailing "and" clause. Opus's interpretation of "one sentence" was technically correct and behaviorally wrong.
 
@@ -33,7 +33,7 @@ A strong model will satisfy the letter of an abstract rule while violating the s
 LAYER 6.5 now carries a "ONE-SENTENCE CONTRACT (BLOCKING)" block with:
 
 1. **4 explicit failure shapes** — clause-join with `and`/`—`/`;`; parenthetical aside; subordinate `which`/`because` tail; two-action lists.
-2. **One compliant worked example** — `**Do this:** Run /<your-first-brand-coach> discovery now.`
+2. **One compliant worked example** — `**Do this:** Run /unstuck discovery now.`
 3. **One violation worked example** — Opus's actual failure, verbatim and labeled.
 4. **5-step mechanical self-check** — count periods, check parens, check clause-joins, check em-dashes, check trailing `and`.
 

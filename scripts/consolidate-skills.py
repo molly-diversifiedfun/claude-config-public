@@ -634,12 +634,16 @@ def _user_plugin_verb(user_s: dict, plugin_s: dict, wins_map: dict[str, int]) ->
     return f"delete user-installed `{user_s['name']}` (plugin `{plugin_s['name']}` wins or ties)"
 
 
-def build_report(skills: list[dict], losses_map: dict, eliminated_set: set,
-                 wins_map: dict, appearances_map: dict,
-                 jaccard_only_mode: bool) -> str:
-    """Build the full markdown report. Returns the report text."""
-    sorted_skills = sorted(skills, key=lambda s: s["name"])
+def _score_all_pairs(sorted_skills: list[dict], losses_map: dict, eliminated_set: set,
+                     wins_map: dict, appearances_map: dict,
+                     jaccard_only_mode: bool) -> dict[str, list[dict]]:
+    """Score every ordered pair of skills and bucket by tier.
 
+    Returns pairs_by_tier dict with keys HIGH/MEDIUM/LOW, each holding a list of
+    pair dicts. DROPped pairs are silently omitted — the caller never sees them.
+    Does not mutate the input collections themselves; pair dicts hold references
+    to skill dicts from sorted_skills, so callers must not mutate those in place.
+    """
     pairs_by_tier: dict[str, list[dict]] = {"HIGH": [], "MEDIUM": [], "LOW": []}
     for i in range(len(sorted_skills)):
         for j in range(i + 1, len(sorted_skills)):
@@ -659,24 +663,52 @@ def build_report(skills: list[dict], losses_map: dict, eliminated_set: set,
                 "losses": losses_n, "elim": elim_n,
                 "composite": comp, "verb": verb,
             })
+    return pairs_by_tier
 
+
+def _collect_ambiguity_band(pairs_by_tier: dict[str, list[dict]]) -> list[dict]:
+    """Gather pairs in the judge's ambiguity range [AMBIGUITY_LO, AMBIGUITY_HI).
+
+    Plugin+plugin pairs are excluded because the judge layer only runs on
+    user-owned skills where an actionable recommendation can be made.
+    """
     # Phase 7.7a.2 — collect ambiguity band for judge layer
-    ambiguity_band = []
+    band = []
     for tier_name in ("HIGH", "MEDIUM", "LOW"):
         for p in pairs_by_tier[tier_name]:
             if (JUDGE_AMBIGUITY_LO <= p["composite"] < JUDGE_AMBIGUITY_HI
                     and not _is_plugin_plugin(p["s1"], p["s2"])):
-                ambiguity_band.append(p)
+                band.append(p)
+    return band
 
+
+def _run_judge_layer(ambiguity_band: list[dict]) -> tuple[dict, dict | None]:
+    """Invoke judge_layer unless kill switch or --no-judge flag is set.
+
+    Returns ({}, None) when judging is skipped (kill switch, --no-judge flag,
+    or empty band). Returns (verdicts_dict, stats_dict) from judge_layer otherwise.
+    Reads sys.argv for the --no-judge flag.
+    """
     # Phase 7.7a.2 — judge layer (skipped if kill switch or --no-judge)
-    judge_verdicts: dict = {}
-    judge_stats: dict | None = None
     judge_off = os.environ.get("SKILL_JUDGE", "on").lower() == "off"
     no_judge_flag = "--no-judge" in sys.argv
-    if not judge_off and not no_judge_flag and ambiguity_band:
-        cache_path = Path(os.environ.get("JUDGE_CACHE_FILE", DEFAULT_JUDGE_CACHE))
-        judge_verdicts, judge_stats = judge_layer(ambiguity_band, cache_path)
+    if judge_off or no_judge_flag or not ambiguity_band:
+        return {}, None
+    cache_path = Path(os.environ.get("JUDGE_CACHE_FILE", DEFAULT_JUDGE_CACHE))
+    return judge_layer(ambiguity_band, cache_path)
 
+
+def _assemble_semantic_tier(ambiguity_band: list[dict], judge_verdicts: dict,
+                            pairs_by_tier: dict[str, list[dict]]) -> tuple[list[dict], int]:
+    """Promote judge-confirmed overlaps into the SEMANTIC tier.
+
+    Returns (capped_semantic_pairs, total_before_cap). Pairs that meet the
+    confidence floor are annotated with judge metadata and sorted
+    (confidence desc, composite desc) before the tier cap is applied.
+
+    PRECONDITION: must be called before TIER_CAP truncation — the orig_tier
+    lookup reads pairs_by_tier membership, which is lost once lists are sliced.
+    """
     # Phase 7.7a.2 — assemble SEMANTIC tier
     semantic_pairs: list[dict] = []
     if judge_verdicts:
@@ -696,56 +728,69 @@ def build_report(skills: list[dict], losses_map: dict, eliminated_set: set,
                                        "orig_tier": orig_tier})
     semantic_pairs.sort(key=lambda x: (-x["judge_confidence"], -x["composite"]))
     semantic_total = len(semantic_pairs)
-    semantic_pairs = semantic_pairs[:JUDGE_TIER_CAP]
+    return semantic_pairs[:JUDGE_TIER_CAP], semantic_total
 
-    tier_total = {tier: len(pairs) for tier, pairs in pairs_by_tier.items()}
-    for tier in pairs_by_tier:
-        pairs_by_tier[tier].sort(key=lambda p: -p["composite"])
-        pairs_by_tier[tier] = pairs_by_tier[tier][:TIER_CAP]
 
-    lines = ["# Skill Consolidation Report", ""]
-    if jaccard_only_mode:
-        lines.append("⚠ **Jaccard-only mode** — bake-off data unavailable. Composite scores collapse to Jaccard.")
+def _render_semantic_section(semantic_pairs: list[dict], semantic_total: int) -> list[str]:
+    """Render the SEMANTIC tier as markdown lines (with trailing blank line per entry).
+
+    Returns an empty list when there are no SEMANTIC pairs — caller skips the block.
+    """
+    if not semantic_pairs:
+        return []
+    lines = []
+    shown = len(semantic_pairs)
+    suffix = (f" (showing top {shown} of {semantic_total})"
+              if semantic_total > shown else f" ({semantic_total} pairs)")
+    lines.append(f"## SEMANTIC{suffix}")
+    lines.append("")
+    for p in semantic_pairs:
+        short_rat = (p["judge_rationale"][:80] + "…"
+                     if len(p["judge_rationale"]) > 80 else p["judge_rationale"])
+        lines.append(f"### `{p['s1']['name']}` {p['s1']['source']}"
+                     f"  ↔  `{p['s2']['name']}` {p['s2']['source']}")
+        lines.append(f"**Judge:** overlap=true, confidence={p['judge_confidence']}/5 — _{short_rat}_")
+        lines.append(f"**Composite:** {p['composite']:.3f} (also in {p['orig_tier']}) — "
+                     f"`desc_jaccard={p['desc_jaccard']:.3f}, "
+                     f"body_jaccard={p['body_jaccard']:.3f}`")
+        lines.append(f"**Verb:** {p['verb']}")
         lines.append("")
+    return lines
 
-    if semantic_pairs:
-        shown = len(semantic_pairs)
-        suffix = (f" (showing top {shown} of {semantic_total})"
-                  if semantic_total > shown else f" ({semantic_total} pairs)")
-        lines.append(f"## SEMANTIC{suffix}")
+
+def _render_tier_section(tier: str, pairs: list[dict], total: int) -> list[str]:
+    """Render one Jaccard tier (HIGH / MEDIUM / LOW) as markdown lines.
+
+    Each pair entry ends with a blank line; the section header is always emitted
+    even when the tier is empty, so the report structure is stable across runs.
+    """
+    lines = []
+    shown = len(pairs)
+    suffix = f" (showing top {shown} of {total})" if total > shown else f" ({total} pairs)"
+    lines.append(f"## {tier}{suffix}")
+    lines.append("")
+    if not pairs:
+        lines.append("_None._")
         lines.append("")
-        for p in semantic_pairs:
-            short_rat = (p["judge_rationale"][:80] + "…"
-                         if len(p["judge_rationale"]) > 80 else p["judge_rationale"])
-            lines.append(f"### `{p['s1']['name']}` {p['s1']['source']}"
-                         f"  ↔  `{p['s2']['name']}` {p['s2']['source']}")
-            lines.append(f"**Judge:** overlap=true, confidence={p['judge_confidence']}/5 — _{short_rat}_")
-            lines.append(f"**Composite:** {p['composite']:.3f} (also in {p['orig_tier']}) — "
-                         f"`desc_jaccard={p['desc_jaccard']:.3f}, "
-                         f"body_jaccard={p['body_jaccard']:.3f}`")
-            lines.append(f"**Verb:** {p['verb']}")
-            lines.append("")
-
-    for tier in ["HIGH", "MEDIUM", "LOW"]:
-        shown = len(pairs_by_tier[tier])
-        total = tier_total[tier]
-        suffix = f" (showing top {shown} of {total})" if total > shown else f" ({total} pairs)"
-        lines.append(f"## {tier}{suffix}")
+        return lines
+    for p in pairs:
+        lines.append(f"### `{p['s1']['name']}` {p['s1']['source']}  ↔  `{p['s2']['name']}` {p['s2']['source']}")
+        lines.append(f"**Composite:** {p['composite']:.3f} — `desc_jaccard={p['desc_jaccard']:.3f}, body_jaccard={p['body_jaccard']:.3f}, losses={p['losses']}, eliminated={'Y' if p['elim'] else 'N'}`")
+        lines.append(f"**Verb:** {p['verb']}")
         lines.append("")
-        if not pairs_by_tier[tier]:
-            lines.append("_None._")
-            lines.append("")
-            continue
-        for p in pairs_by_tier[tier]:
-            lines.append(f"### `{p['s1']['name']}` {p['s1']['source']}  ↔  `{p['s2']['name']}` {p['s2']['source']}")
-            lines.append(f"**Composite:** {p['composite']:.3f} — `desc_jaccard={p['desc_jaccard']:.3f}, body_jaccard={p['body_jaccard']:.3f}, losses={p['losses']}, eliminated={'Y' if p['elim'] else 'N'}`")
-            lines.append(f"**Verb:** {p['verb']}")
-            lines.append("")
+    return lines
 
+
+def _render_footer(skills: list[dict], losses_map: dict, eliminated_set: set,
+                   judge_stats: dict | None) -> list[str]:
+    """Render the report footer: signal availability, weights, optional judge stats.
+
+    judge_stats is None when judging was skipped; the footer line is omitted in that case.
+    """
     bake_off_count = sum(1 for s in skills if s["name"] in losses_map)
     coverage_pct = (bake_off_count / len(skills) * 100) if skills else 0
-    low_cov_warning = "⚠ low bake-off coverage — composite scores heavily Jaccard-weighted\n\n" if coverage_pct < 10 else ""
-
+    low_cov_warning = ("⚠ low bake-off coverage — composite scores heavily Jaccard-weighted\n\n"
+                       if coverage_pct < 10 else "")
     footer_lines = [
         "---",
         "",
@@ -770,7 +815,47 @@ def build_report(skills: list[dict], losses_map: dict, eliminated_set: set,
         f"**Generated:** {datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')}",
         "",
     ])
-    lines.extend(footer_lines)
+    return footer_lines
+
+
+def build_report(skills: list[dict], losses_map: dict, eliminated_set: set,
+                 wins_map: dict, appearances_map: dict,
+                 jaccard_only_mode: bool) -> str:
+    """Build the full markdown report. Returns the report text.
+
+    Delegates each logical phase to a focused helper so each concern stays within
+    the 50-line guideline. This function is an orchestrator only — no scoring or
+    rendering logic lives here.
+    """
+    sorted_skills = sorted(skills, key=lambda s: s["name"])
+
+    pairs_by_tier = _score_all_pairs(
+        sorted_skills, losses_map, eliminated_set, wins_map, appearances_map, jaccard_only_mode,
+    )
+
+    ambiguity_band = _collect_ambiguity_band(pairs_by_tier)
+    judge_verdicts, judge_stats = _run_judge_layer(ambiguity_band)
+    semantic_pairs, semantic_total = _assemble_semantic_tier(
+        ambiguity_band, judge_verdicts, pairs_by_tier,
+    )
+
+    # Cap each Jaccard tier to TIER_CAP before rendering (totals saved first for suffix)
+    tier_total = {tier: len(pairs) for tier, pairs in pairs_by_tier.items()}
+    for tier in pairs_by_tier:
+        pairs_by_tier[tier].sort(key=lambda p: -p["composite"])
+        pairs_by_tier[tier] = pairs_by_tier[tier][:TIER_CAP]
+
+    lines: list[str] = ["# Skill Consolidation Report", ""]
+    if jaccard_only_mode:
+        lines.append("⚠ **Jaccard-only mode** — bake-off data unavailable. Composite scores collapse to Jaccard.")
+        lines.append("")
+
+    lines.extend(_render_semantic_section(semantic_pairs, semantic_total))
+
+    for tier in ["HIGH", "MEDIUM", "LOW"]:
+        lines.extend(_render_tier_section(tier, pairs_by_tier[tier], tier_total[tier]))
+
+    lines.extend(_render_footer(skills, losses_map, eliminated_set, judge_stats))
 
     return "\n".join(lines)
 

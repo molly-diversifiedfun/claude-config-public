@@ -24,21 +24,42 @@ fi
 
 PROMPT=$(echo "$INPUT" | jq -r '.tool_input.prompt // ""' 2>/dev/null)
 
+# Phase 8.x adjustment (2026-05-24): strip fenced code blocks before counting.
+# Paths inside ```...``` blocks are code content (test fixtures, example commands),
+# not files the agent navigates to. Without this, dual-write patterns + test
+# fixtures + canonical YAML examples blow the limit on every dispatch.
+PROMPT_PROSE=$(echo "$PROMPT" | awk '
+  /^```/ { in_block = !in_block; next }
+  !in_block { print }
+')
+
 # Allowlist: routine reference docs that don't count toward the operational limit.
 # Citations / memory files / run artifacts / ADRs / orientation docs.
 ALLOWLIST_REGEX='(^|/)(MEMORY|HANDOFF|TASKS|CLAUDE|CHANGELOG|README|AGENTS|GEMINI)\.md$|(^|/)(feedback|project|reference|user)_[^/]+\.md$|/\.ship/[^/]+/[^/]*\.md$|/docs/decisions/[^/]+\.md$|/docs/audit/[^/]+\.md$|/\.claude/rules/[^/]+\.md$|(^|/)(patterns|spec|deploy-log|handoff-draft|TODO|NOTES)\.md$'
 
 # Collect prefix-matched file paths (src/foo.ts, docs/bar.md, supabase/baz.sql)
-PREFIX_FILES=$(echo "$PROMPT" | grep -oE '(src/|docs/|supabase/)[^ ]+\.(ts|tsx|md|sql|js|jsx)' | sort -u)
+PREFIX_FILES=$(echo "$PROMPT_PROSE" | grep -oE '(src/|docs/|supabase/)[^ ]+\.(ts|tsx|md|sql|js|jsx)' | sort -u)
 
 # Collect backticked files (any path in backticks ending in known extensions, strip backticks)
-BACKTICK_FILES=$(echo "$PROMPT" | grep -oE '`[^`]+\.(ts|tsx|md|sql|js|jsx)`' | tr -d '`' | sort -u)
+BACKTICK_FILES=$(echo "$PROMPT_PROSE" | grep -oE '`[^`]+\.(ts|tsx|md|sql|js|jsx)`' | tr -d '`' | sort -u)
 
-# Merge and dedupe
+# Merge
 ALL_REFS=$(printf '%s\n%s\n' "$PREFIX_FILES" "$BACKTICK_FILES" | grep -v '^$' | sort -u)
 
+# Phase 8.x adjustment (2026-05-24): canonicalize paths before dedup.
+# `~/foo` and `$HOME/foo` and absolute `/Users/.../foo` are the same file.
+# Also strip `$VAR/`-prefixed paths — those are template variables, not real files.
+CANONICAL_REFS=$(echo "$ALL_REFS" | while IFS= read -r p; do
+  [ -z "$p" ] && continue
+  # Skip template-variable paths ($TMP/foo, etc.)
+  if [ "${p:0:1}" = '$' ]; then continue; fi
+  # Normalize ~/ → $HOME/
+  if [ "${p:0:2}" = '~/' ]; then p="$HOME/${p:2}"; fi
+  echo "$p"
+done | sort -u)
+
 # Filter allowlist — only count operational refs
-OPERATIONAL_REFS=$(echo "$ALL_REFS" | grep -vE "$ALLOWLIST_REGEX" || true)
+OPERATIONAL_REFS=$(echo "$CANONICAL_REFS" | grep -vE "$ALLOWLIST_REGEX" || true)
 FILE_COUNT=$(echo "$OPERATIONAL_REFS" | grep -v '^$' | wc -l | tr -d ' ')
 
 MAX_FILES=6

@@ -7,7 +7,7 @@ projects: [all]
 severity: blocking
 phase: [build, test, review, deploy]
 trigger: [agent-output-staged, silent-success, ambiguous-question]
-last-validated: 2026-05-10
+last-validated: 2026-05-22
 archetypes: [always-on]
 ---
 
@@ -47,6 +47,29 @@ When adding a new MCP tool / watcher / processor / executor / sweeper / action h
 4. If an "exhaustive expected set" assertion exists (e.g., `set(keys) == {...}`), UPDATE it. Half-finished updates leave the assertion mirroring the bug instead of enforcing the spec.
 
 Before opening the PR: grep for the new module name across all `**/registry.py`, `**/mcp_registry.py`, `**/actions.py`. Must return ≥1 hit beyond the module's own file. The 2026-05-17 dispatch_investigate prod incident burned 14+ hours because a fully unit-tested module was never imported into the registry — the existing `test_to_options_kwargs_keys` reflected the bug instead of enforcing the spec.
+
+## Greppable wire-up: callback / setInterval / observer
+
+The registry-contract test above catches new modules added to a static dispatch dict. It does NOT catch modules wired via callback or `setInterval` — there's no key set to assert membership against. The wire-up is invisible to unit tests, integration tests, and even a careful read of the module under test.
+
+**The rule:** before claiming a callback-wired module is shipped, run
+```bash
+grep -rn "runMyFunction" src/ --include="*.ts" | grep -v test
+```
+If the only hits are the module's own definition file, the function is **inert in production**.
+
+**Why this is a separate check from registry-contract testing:** static registries (a `dict[str, Module]` or `EXTRACTORS = {...}`) have a shared data structure an integration test can assert against. Callbacks (`onReadingLogWritten`, `onMessageReceived`) and setIntervals (`setInterval(() => runX(...), N)`) have NO shared structure — the only evidence the function fires in prod is the call site in non-test code. Unit tests run the function under direct call. The DoD's "all tests pass + Railway SUCCESS" gate cannot tell you whether the dispatcher / scheduler / orchestrator actually invokes your function.
+
+**How to apply:**
+1. After shipping any new exported async function intended to fire automatically: grep for its name in non-test src. Expect ≥1 hit beyond the definition file.
+2. Add this check to the DoD verification step for any PR that introduces a new observer / tick / callback-wired module.
+3. When designing the wire-up, prefer the most greppable name. `runConnectionsObserver` is easy to find; a deeply-nested method on a class in the dependency graph is not.
+
+**Two incidents — same shape, opposite ends of the registry/callback dichotomy:**
+- **<your-agent-project> 2026-05-17** — `dispatch_investigate` MCP tool. Static dispatch registry case. Module shipped with 10 passing unit tests + named in `reference/prompts/system.md` + complete production code, but never imported into `reference/capabilities/mcp_registry.py`. Inert in production for 14+ hours. The existing `test_to_options_kwargs_keys` asserted an exact key set that didn't include `dispatch_investigate` — so the test was reflecting the bug, not enforcing the spec, and stayed green. Fix: registry contract test enforcement above.
+- **<your-personal-ai-project> 2026-05-22 (Pair B)** — `runConnectionsObserver` + `runOpinionCrystallizer`. Callback/observer wire-up case. Both shipped with full unit tests + voice rules + Sonnet system blocks describing them. Neither was imported into `src/index.ts`. ~24h inert (zero `brain_facts.fact_kind='connects_to'` rows, zero `nancy_opinion` rows on 31 fresh reading_logs). No registry to assert against — only `grep` would have caught it. Fix: PR #199 wired them in.
+
+The <your-agent-project> case was caught by adding integration tests asserting registry membership. The <your-personal-ai-project> case is caught by the grep step above — there's no test that can substitute when the wire-up isn't into a shared structure.
 
 ## Don't trust silent success on writes
 

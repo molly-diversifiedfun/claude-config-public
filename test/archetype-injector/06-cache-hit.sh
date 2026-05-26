@@ -7,7 +7,7 @@ CACHE="$HOME/.claude/checkpoints/archetype-cache.json"
 # Clear cache
 rm -f "$CACHE"
 
-INPUT='{"cwd":"$HOME/github/<your-bot>","prompt":""}'
+INPUT='{"cwd":"$HOME/github/nancy","prompt":""}'
 
 # First invocation
 echo "$INPUT" | "$HOOK" >/dev/null
@@ -18,12 +18,12 @@ if [ ! -f "$CACHE" ]; then
 fi
 
 # Cache should contain the cwd → archetype mapping
-if ! jq -e '.["$HOME/github/<your-bot>"]' "$CACHE" >/dev/null 2>&1; then
-  echo "FAIL: cache missing key for <your-bot>. Got: $(cat "$CACHE")" >&2
+if ! jq -e '.["$HOME/github/nancy"]' "$CACHE" >/dev/null 2>&1; then
+  echo "FAIL: cache missing key for nancy. Got: $(cat "$CACHE")" >&2
   exit 1
 fi
 
-ARCH=$(jq -r '.["$HOME/github/<your-bot>"].archetype' "$CACHE")
+ARCH=$(jq -r '.["$HOME/github/nancy"].archetype' "$CACHE")
 if [ "$ARCH" != "telegram-bot" ]; then
   echo "FAIL: expected cached archetype=telegram-bot, got: $ARCH" >&2
   exit 1

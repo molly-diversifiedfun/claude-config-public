@@ -1,7 +1,7 @@
 # ~/.claude/skill-archetypes.yaml — skill name → archetype tags (manual, opinionated)
 #
 # Phase 7.1 — seeded 2026-05-20 from real-usage data (45 invocations / 20 unique skills
-# mined from 30 transcripts) PLUS "Bucket B" archetype-relevant skills the user currently
+# mined from 30 transcripts) PLUS "Bucket B" archetype-relevant skills Molly currently
 # forgets to invoke (carl-manager, ui-ux-pro-max, copywriting, mental-models, etc.).
 #
 # Vocabulary (same as projects.yaml):

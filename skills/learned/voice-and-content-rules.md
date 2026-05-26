@@ -1,6 +1,6 @@
 ---
 name: voice-and-content-rules
-description: Voice register (Kerouac × Sinek × Codie Sanchez), pillars/format mix, copy-is-sacred discipline, carousel variety rules. The cumulative voice contract for all <your-first-brand> content.
+description: Voice register (Kerouac × Sinek × Codie Sanchez), pillars/format mix, copy-is-sacred discipline, carousel variety rules. The cumulative voice contract for all Unstuck content.
 type: learned-pattern
 applies-to: [content]
 projects: [all]
@@ -20,7 +20,7 @@ Write like texting a smart friend at midnight. Not performing wisdom — thinkin
 ## Social vs long-form split
 - Instagram/social: plain language, "ship" and "build" OK, drop PM jargon
 - Website/essays: PM terminology OK, reader self-selected
-- <your-first-brand> is a "build partnership practice" — NEVER call it coaching
+- Unstuck is a "build partnership practice" — NEVER call it coaching
 
 ## Content pillar rules
 - Mirror: stops at Agitate. No solution language. CTA = share trigger.
@@ -91,7 +91,7 @@ unlock, unleash, manifest, journey, transformation, level up, game-changer, revo
 - CARL WRITING domain (7 rules)
 - CARL CONTENT-RULES domain (8 rules)
 - content-qa-guarded.sh PostToolUse hook
-- Caption pipeline: <your-first-brand-slug>/prompts/caption-generator.md
+- Caption pipeline: unstuck/prompts/caption-generator.md
 
 ## Cross-refs
 - `verify-before-commit.md` — read agent-written copy, grep for AI tells

@@ -2,7 +2,7 @@
 set -euo pipefail
 HOOK="$HOME/.claude/hooks/archetype-injector.sh"
 
-INPUT='{"cwd":"$HOME/github/<your-bot>","prompt":""}'
+INPUT='{"cwd":"$HOME/github/nancy","prompt":""}'
 OUT=$(echo "$INPUT" | ARCHETYPE_GATE=off "$HOOK")
 
 if [ "$(echo "$OUT" | jq -c .)" != "{}" ]; then

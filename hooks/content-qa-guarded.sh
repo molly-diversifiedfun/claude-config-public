@@ -12,8 +12,8 @@ FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // .tool_input.command 
 # ============================================================
 # Only run QA on content files (captions, carousels, posts, calendars)
 case "$FILE_PATH" in
-  */<your-content-pipeline>/*)  ;; # content system repo — check it
-  */<your-first-brand-slug>/*)         ;; # <your-first-brand> content — check it
+  */content-system/*)  ;; # content system repo — check it
+  */unstuck/*)         ;; # unstuck brand content — check it
   */captions/*)        ;; # caption files — check it
   */posts/*)           ;; # post files — check it
   */carousels/*)       ;; # carousel files — check it

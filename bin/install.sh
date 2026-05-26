@@ -1,32 +1,16 @@
 #!/usr/bin/env bash
-# install.sh — sync this repo into ~/.claude/.
+# install.sh — copy the contents of this repo into ~/.claude/.
 #
-# ⚠️  DESTRUCTIVE: uses `rsync --delete` on ~/.claude/{skills,agents,commands,
-#     rules,hooks,scripts}. Any file in those directories that is not in this
-#     repo will be REMOVED. settings.json, sessions/, projects/, cache/,
-#     telemetry/, and other unmanaged dirs are preserved.
+# Idempotent: re-running overwrites whatever's in ~/.claude/{skills,agents,commands,rules,hooks},
+# preserving anything else (settings.json with secrets, sessions/, projects/, cache/, etc.).
 #
-# If you have an existing ~/.claude/ setup, back it up first:
-#     cp -R ~/.claude ~/.claude.backup-$(date +%Y%m%d)
+# Usage: ./bin/install.sh
 #
-# Usage:
-#     ./bin/install.sh           # interactive: prompts before overwriting existing setup
-#     ./bin/install.sh --yes     # scripted: skip confirmation prompt
-#
-# Run from the repo root.
+# Run from the repo root or with the repo dir as argv[1].
 
 set -euo pipefail
 
-# Arg parsing — accept --yes / -y flag and optional repo dir
-YES=no
-REPO_ARG=""
-for arg in "$@"; do
-  case "$arg" in
-    --yes|-y) YES=yes ;;
-    *) REPO_ARG="$arg" ;;
-  esac
-done
-REPO_DIR="${REPO_ARG:-$(cd "$(dirname "$0")/.." && pwd)}"
+REPO_DIR="${1:-$(cd "$(dirname "$0")/.." && pwd)}"
 TARGET="${HOME}/.claude"
 
 if [ ! -d "$REPO_DIR" ]; then
@@ -36,32 +20,6 @@ fi
 if [ ! -d "$REPO_DIR/skills" ] || [ ! -d "$REPO_DIR/agents" ]; then
   echo "Error: $REPO_DIR doesn't look like a claude-config repo (missing skills/ or agents/)" >&2
   exit 1
-fi
-
-# Warn if an existing setup will be overwritten
-EXISTING=no
-for d in skills agents commands rules hooks scripts; do
-  if [ -d "$TARGET/$d" ] && [ "$(find "$TARGET/$d" -maxdepth 1 -mindepth 1 2>/dev/null | wc -l)" -gt 0 ]; then
-    EXISTING=yes
-    break
-  fi
-done
-if [ "$EXISTING" = "yes" ]; then
-  echo "⚠️  ~/.claude/ has existing content in skills/, agents/, commands/, rules/, hooks/, or scripts/."
-  echo "    install.sh will rsync --delete those directories. Files not in this repo will be REMOVED."
-  echo "    Other dirs (sessions/, projects/, cache/, settings.json) are preserved."
-  echo ""
-  if [ "$YES" = "no" ]; then
-    printf "Back up first with: cp -R ~/.claude ~/.claude.backup-\$(date +%%Y%%m%%d)\n"
-    printf "Continue with install? [y/N] "
-    read -r confirm
-    case "$confirm" in
-      y|Y|yes|YES) ;;
-      *) echo "Aborted."; exit 1 ;;
-    esac
-  else
-    echo "(--yes given, proceeding)"
-  fi
 fi
 
 mkdir -p "$TARGET"
@@ -89,21 +47,34 @@ if [ -d "$REPO_DIR/scripts" ]; then
   chmod +x "$TARGET/scripts/"*.py 2>/dev/null || true
 fi
 
+# CARL lives at ~/.carl/, not ~/.claude/. Install the domain files if the
+# repo has them. NOT a --delete sync: a live carl/n8n file (gitignored,
+# contains infra references; created manually per CHECKLIST.md item 2b)
+# must survive re-runs of install.sh.
+if [ -d "$REPO_DIR/carl" ]; then
+  echo "→ syncing carl/ → $HOME/.carl/  (no --delete; preserves local carl/n8n)"
+  mkdir -p "$HOME/.carl"
+  rsync -a --exclude='.DS_Store' --exclude='n8n' "$REPO_DIR/carl/" "$HOME/.carl/"
+fi
+
+# Root-level YAML configs (Phase 7.1 archetype injection).
+for yaml in projects.yaml skill-archetypes.yaml work-type-chains.yaml; do
+  if [ -f "$REPO_DIR/$yaml" ]; then
+    echo "→ copying $yaml → $TARGET/$yaml"
+    cp "$REPO_DIR/$yaml" "$TARGET/$yaml"
+  fi
+done
+
 echo "→ copying CLAUDE.md → $TARGET/CLAUDE.md"
 cp "$REPO_DIR/CLAUDE.md" "$TARGET/CLAUDE.md"
 
 # settings.local.json holds the permission allowlist (no secrets). Only install
-# if the repo ships one AND the target doesn't already have one. This public
-# snapshot deliberately doesn't ship settings.local.json — make your own.
-if [ -f "$REPO_DIR/settings.local.json" ]; then
-  if [ ! -f "$TARGET/settings.local.json" ]; then
-    echo "→ copying settings.local.json → $TARGET/settings.local.json"
-    cp "$REPO_DIR/settings.local.json" "$TARGET/settings.local.json"
-  else
-    echo "→ skipping settings.local.json (already exists; review docs/install.md to merge)"
-  fi
+# if there isn't one already — don't clobber a user's local tweaks.
+if [ ! -f "$TARGET/settings.local.json" ]; then
+  echo "→ copying settings.local.json → $TARGET/settings.local.json"
+  cp "$REPO_DIR/settings.local.json" "$TARGET/settings.local.json"
 else
-  echo "→ skipping settings.local.json (not shipped in this snapshot — see docs/install.md to author your own)"
+  echo "→ skipping settings.local.json (already exists; review docs/install.md to merge)"
 fi
 
 # settings.json is NEVER copied — it has machine-specific config + secrets.

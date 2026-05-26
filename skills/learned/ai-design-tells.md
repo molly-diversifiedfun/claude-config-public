@@ -1,6 +1,6 @@
 ---
 name: ai-design-tells
-description: AI-generated designs (Lovable, v0, Cursor, Claude in TSX) converge on a recognizable aesthetic — gradient blob heroes, symmetric grids, indigo/purple palettes, gradient pill CTAs. Senior tech buyers clock it instantly. Catalog of visual + component + code patterns to AVOID, plus the canonical <your-first-brand> alternatives.
+description: AI-generated designs (Lovable, v0, Cursor, Claude in TSX) converge on a recognizable aesthetic — gradient blob heroes, symmetric grids, indigo/purple palettes, gradient pill CTAs. Senior tech buyers clock it instantly. Catalog of visual + component + code patterns to AVOID, plus the canonical Unstuck alternatives.
 type: learned-pattern
 applies-to: [design, frontend, marketing, ui]
 projects: [all]
@@ -16,9 +16,9 @@ archetypes: [web-app, brand-content]
 
 ## Why this matters
 
-<your-first-brand>'s brand differentiator is the opposite of generic AI aesthetics: warm editorial, hand-drawn illustrations, "smart friend two drinks in" voice, anti-corporate. Every default AI-generated landing page (Lovable, v0, Cursor) leans the same direction — gradient blob heroes, symmetric 3-col features, indigo/purple palettes, "Trusted by" logo bars, pill CTAs with `→`. Senior tech buyers recognize this aesthetic and read it as: cheaply produced, indistinct, low-trust.
+Unstuck's brand differentiator is the opposite of generic AI aesthetics: warm editorial, hand-drawn illustrations, "smart friend two drinks in" voice, anti-corporate. Every default AI-generated landing page (Lovable, v0, Cursor) leans the same direction — gradient blob heroes, symmetric 3-col features, indigo/purple palettes, "Trusted by" logo bars, pill CTAs with `→`. Senior tech buyers recognize this aesthetic and read it as: cheaply produced, indistinct, low-trust.
 
-**Canonical reference:** `~/github/<your-web-app-1>/docs/ai-design-tells.md` (474 lines, 7 sections, 26-point checklist). This file is the brief always-loaded summary.
+**Canonical reference:** `~/github/unstuckwithmolly/docs/ai-design-tells.md` (474 lines, 7 sections, 26-point checklist). This file is the brief always-loaded summary.
 
 ---
 
@@ -69,9 +69,9 @@ archetypes: [web-app, brand-content]
 
 ---
 
-## The <your-first-brand> alternatives (what to do INSTEAD)
+## The Unstuck alternatives (what to do INSTEAD)
 
-| AI default | <your-first-brand> alternative |
+| AI default | Unstuck alternative |
 |-----------|---------------------|
 | Gradient blob hero | Soft Pink Sketch illustration OR real product screenshot OR confident negative space |
 | Symmetric N-col grid | Magazine-style asymmetric layout (1 dominant + 2 small, zigzag) |
@@ -97,4 +97,4 @@ archetypes: [web-app, brand-content]
 
 **If you can't tell which company built this from the design alone, rebuild it until you can.**
 
-That's the test. The <your-first-brand> brand only works if the visual identity is unmistakable. AI-default aesthetics fail that test by design.
+That's the test. The Unstuck brand only works if the visual identity is unmistakable. AI-default aesthetics fail that test by design.

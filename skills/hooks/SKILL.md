@@ -13,7 +13,7 @@ allowed-tools: Read Write Edit Grep Glob
 ---
 
 <!-- Auto-inject brand config if available -->
-Brand config: !`cat <your-first-brand-slug>/brand-config.json 2>/dev/null || echo "No brand config found — using defaults"`
+Brand config: !`cat unstuck/brand-config.json 2>/dev/null || echo "No brand config found — using defaults"`
 
 # Hooks — Brand Voice Hook Generator
 
@@ -23,9 +23,9 @@ Generate 5 structurally distinct hook variants per topic, enforced against a bra
 
 **Step 1: Load brand context.** Read these files in order:
 
-1. **Voice DNA**: `<your-content-pipeline>/{brand}/{brand}-voice-dna.md` — the operational voice profile
+1. **Voice DNA**: `content-system/{brand}/{brand}-voice-dna.md` — the operational voice profile
 2. **Brand rules**: `.claude/rules/brands/{brand}.md` — vocabulary and positioning rules
-3. **Content strategy** (if exists): `<your-content-pipeline>/{brand}/strategy.md` — pillars and audience
+3. **Content strategy** (if exists): `content-system/{brand}/strategy.md` — pillars and audience
 
 If no brand is specified, ask. If Voice DNA doesn't exist, stop and tell the user to run `voice-extractor` first.
 
@@ -84,7 +84,7 @@ After generating all 5 hooks, score each on three dimensions (1-10):
 
 **The brand-distinctiveness test:** If you covered the @handle, could this hook come from ANY business account? If yes, it fails Brand fit regardless of the number score.
 
-**The audience proxy test (<your-first-brand>):** Would a Staff Engineer at Stripe, mid-scroll at 11pm, stop and read this? If no, it fails Scroll-stop.
+**The audience proxy test (Unstuck):** Would a Staff Engineer at Stripe, mid-scroll at 11pm, stop and read this? If no, it fails Scroll-stop.
 
 ## Hook Quality Rules
 
@@ -119,7 +119,7 @@ Before delivering hooks, check:
 
 Ask the user for:
 1. **Topic** — what the content is about
-2. **Brand** — which brand (default: <your-first-brand-slug>)
+2. **Brand** — which brand (default: unstuck)
 3. **Platform** — Instagram caption, email subject, carousel slide 1, Reel opening (default: Instagram caption)
 4. **Context** (optional) — what pillar this falls under, what the full piece is about
 

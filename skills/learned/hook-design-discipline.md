@@ -37,10 +37,10 @@ exit 2
 
 ## Over-block patterns to avoid
 
-- **`--force` regex too greedy.** `block-dangerous.sh` regex `git push.*--force` catches `--force-with-lease` too (the safe variant the hook's own message advertises as the escape hatch). Use anchored regex `\b--force\b` AND/OR negative-lookahead `&& ! grep --force-with-lease` before exiting. Confirmed twice: 2026-05 <your-agent-project> + 2026-05-19 secrets-scrub session — both rebuilt as separate captures (`<your-agent-project>/feedback_block_dangerous_hook_catches_force_with_lease.md`, `workspace/feedback_block_dangerous_hook_blocks_lease_variant.md`). **Workaround** when the hook bug is live and you need the lease push: bash variable assembly to dodge the literal-string match the hook scans — `FLAG=$(echo "--fo rce" | tr -d ' '); git push origin $FLAG --all`. Use ONLY for authorized force-pushes (logged + user-confirmed).
+- **`--force` regex too greedy.** `block-dangerous.sh` regex `git push.*--force` catches `--force-with-lease` too (the safe variant the hook's own message advertises as the escape hatch). Use anchored regex `\b--force\b` AND/OR negative-lookahead `&& ! grep --force-with-lease` before exiting. Confirmed twice: 2026-05 <your-agent-project> + 2026-05-19 secrets-scrub session — both rebuilt as separate captures (`<your-agent-project>/feedback_block_dangerous_hook_catches_force_with_lease.md`, `workspace/feedback_block_dangerous_hook_blocks_lease_variant.md`). **Workaround** when the hook bug is live and you need the lease push: bash variable assembly to dodge the literal-string match the hook scans — `FLAG=$(echo "--fo rce" | tr -d ' '); git push origin $FLAG --all`. Use ONLY for authorized force-pushes (logged + Molly-confirmed).
 - **Stop hook fires on noop sessions.** DoD hook fires on sessions with zero edits, blocking session end on "missing handoff" when nothing happened. Add an early-exit when no tracked files changed. (<your-agent-project>/feedback_dod_hook_fires_on_noop_sessions.md)
-- **cwd drift STILL breaks Stop hook DoD.** The 2026-05-11 ancestor-walk fix at claude-config commit `7b4e522` ancestor-walks UP from cwd and stops at the NEAREST dir with both HANDOFF.md + memory dir. When the workspace root AND a sub-repo BOTH have HANDOFF + memory dir, the sub-repo wins (hit first in the walk). Result: hook checks sub-repo state, flags workspace-level updates as "not done today." Confirmed 2026-05-19 — `cd ~/github/<your-content-pipeline>` early in session = Stop hook checks <your-content-pipeline> HANDOFF + memory at end, ignores workspace updates. **Proper fix:** prefer the OUTERMOST ancestor with HANDOFF+memory (or use explicit `CLAUDE_WORKSPACE_ROOT` env var). Workaround: `cd ~/github` before session naturally ends. (`workspace/feedback_stop_hook_picks_nearest_handoff_not_workspace.md`, supersedes older `feedback_cwd_drift_breaks_stop_hook_dod.md`)
-- **Self-modification refusal is correct, plan for it.** Auto-mode classifier blocks the model from editing its own safety hooks (`~/.claude/hooks/block-dangerous.sh` etc.). That's the right default — when you need a hook patched, surface the exact diff to the user via a doc (e.g. `.ship/<run>/hook-fix-for-user.md`) for her to apply via `$EDITOR` or `! ` prefix command. Don't try to dodge the refusal.
+- **cwd drift STILL breaks Stop hook DoD.** The 2026-05-11 ancestor-walk fix at claude-config commit `7b4e522` ancestor-walks UP from cwd and stops at the NEAREST dir with both HANDOFF.md + memory dir. When the workspace root AND a sub-repo BOTH have HANDOFF + memory dir, the sub-repo wins (hit first in the walk). Result: hook checks sub-repo state, flags workspace-level updates as "not done today." Confirmed 2026-05-19 — `cd ~/github/content-system` early in session = Stop hook checks content-system HANDOFF + memory at end, ignores workspace updates. **Proper fix:** prefer the OUTERMOST ancestor with HANDOFF+memory (or use explicit `CLAUDE_WORKSPACE_ROOT` env var). Workaround: `cd ~/github` before session naturally ends. (`workspace/feedback_stop_hook_picks_nearest_handoff_not_workspace.md`, supersedes older `feedback_cwd_drift_breaks_stop_hook_dod.md`)
+- **Self-modification refusal is correct, plan for it.** Auto-mode classifier blocks the model from editing its own safety hooks (`~/.claude/hooks/block-dangerous.sh` etc.). That's the right default — when you need a hook patched, surface the exact diff to the user via a doc (e.g. `.ship/<run>/hook-fix-for-molly.md`) for her to apply via `$EDITOR` or `! ` prefix command. Don't try to dodge the refusal.
 - **Long-prompt regex false-positive.** PreToolUse hooks that regex-scan `tool_input.prompt` false-positive on pipeline boilerplate. When dispatching agent A whose prompt includes the /ship spec (which describes downstream agent B's role), the hook fires because B's persona/keyword appears in the prompt. Same bug confirmed in 3 contexts (2026-05-19/05-20): <your-personal-ai-project> ship-pipeline end-to-end, crisis-window-ux session, /ship Stage 1 memory-keeper dispatch. The rule: identify the AGENT BEING DISPATCHED, not the AGENTS MENTIONED in the prompt.
 
   **Fix — 3-tier signal hierarchy (strongest first):**
@@ -99,7 +99,7 @@ Hook errors arrive as text inside tool results (`PreToolUse:<name> hook error: .
 4. **For TP cases, no TaskCreate needed.** Note the correction inline and continue.
 5. **Pattern-recognize across multiple FPs.** If two hooks fire FP from the same root cause (e.g. both scanning long pipeline prompts), the fix belongs in a shared discipline doc — see § Over-block patterns above.
 
-**Why this matters:** hook errors are the highest-signal feedback channel for hook calibration. Every FP that isn't triaged becomes chronic friction (the user types `GATE=off` every time, the hook's safety value erodes, eventually someone deletes it — and legitimate cases stop being caught). Every TP that gets dismissed as noise means the next real bug isn't caught either.
+**Why this matters:** hook errors are the highest-signal feedback channel for hook calibration. Every FP that isn't triaged becomes chronic friction (Molly types `GATE=off` every time, the hook's safety value erodes, eventually someone deletes it — and legitimate cases stop being caught). Every TP that gets dismissed as noise means the next real bug isn't caught either.
 
 **Trigger phrases that demand the 5-step reaction:**
 - `PreToolUse:<name> hook error:` — hook returned exit 2 with stderr
@@ -201,8 +201,21 @@ trap 'rmdir "$LOCK" 2>/dev/null' EXIT
 
 Sourced from `feedback_concurrent_stop_hook_drain_no_lock.md`. Pairs with `mempalace-discipline.md` § palace file lock under concurrent miner load (second data point that hooks need concurrency guards once they involve external calls).
 
+## DoD synthesis gate counts tool uses, not insight density (2026-05-23 calibration finding)
+
+`session-retrospective.sh` Check 8 (synthesis cadence) fires when there are ≥10 new feedback files since the newest `learned/*.md` OR ≥7 days. On long ops sessions (cleanup, verification, multi-repo coordination), this gate re-fires after every genuine save because subsequent tool uses pile up without new insights — but the gate counts tool uses, not insight density.
+
+**Symptom:** session does a synthesis pass, writes 1-2 `learned/` updates, the gate clears for ~10 tool-uses, then re-fires because the session keeps going (more file reads, more commits, more diff verifications). The gate is asking for synthesis again on a session that already synthesized.
+
+**Calibration target:** gate on (`tool_uses_since_last_save AND no_recent_memory_added`) → exempt sessions that already saved N+ learned files in this window. Add a `LAST_SYNTHESIS_AT` checkpoint file that the gate reads — if `LAST_SYNTHESIS_AT > NEWEST_FEEDBACK_AT`, gate is satisfied even if tool count is high.
+
+**Workaround until calibrated:** `SYNTHESIS_GATE=off` for the remainder of an ops session after the first synthesis pass. Don't disable the whole `RETROSPECTIVE_GATE` — the other 7 checks are still useful.
+
+Sourced from `feedback_dod_synthesis_gate_counts_tool_uses_not_insight_density.md`.
+
 ## Cross-refs
 - `delegation-discipline.md` — subagent dispatch realities (workflow-gate bypasses)
 - `verify-before-commit.md` — capped-agent silent completion check
 - `mempalace-discipline.md` — concurrent lock under bulk miner load (similar pattern)
-- Workspace memory: `feedback_session_2026_05_15_enforcement_gates_buildout.md`
+- `auto-mode-classifier-discipline.md` — classifier blocks high-severity ops even after blanket "yes" — similar "wisdom of gate over blanket consent" principle
+- Workspace memory: `feedback_session_2026_05_15_enforcement_gates_buildout.md`, `feedback_dod_synthesis_gate_counts_tool_uses_not_insight_density.md`

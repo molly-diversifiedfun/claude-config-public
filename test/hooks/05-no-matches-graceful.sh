@@ -1,32 +1,24 @@
 #!/usr/bin/env bash
-# Test: a description that matches NO skills → exit 0, no injection, no error.
+# Test: manifest agents are NOT touched (no injection, no hijack).
+# Phase 8.x.4: real agents load natively; hook must exit with empty output.
 set +e
 
 HOOK="$HOME/.claude/hooks/inject-skills-for-agent.sh"
 PASS=0; FAIL=0
+TMP=$(mktemp)
+trap 'rm -f "$TMP"' EXIT
 
-# Nonsense query
-INPUT='{"tool_name":"Agent","tool_input":{"subagent_type":"engineer","description":"xyzqwerty zzznopopo","prompt":""}}'
-OUT=$(echo "$INPUT" | bash "$HOOK" 2>/dev/null)
-EXIT=$?
+for agent in builder creator strategist researcher operator product-lead designer debugger security reviewer content-qa memory-keeper; do
+  echo "{\"tool_name\":\"Agent\",\"tool_input\":{\"subagent_type\":\"$agent\",\"description\":\"test\",\"prompt\":\"hello\"}}" \
+    | bash "$HOOK" 2>/dev/null > "$TMP"
+  if [ ! -s "$TMP" ]; then
+    PASS=$((PASS+1))
+  else
+    echo "FAIL: manifest agent '$agent' should NOT be touched by the hook"
+    FAIL=$((FAIL+1))
+  fi
+done
 
-# Assertion 1: exit code is 0 (never block dispatch on no-matches)
-if [ "$EXIT" = "0" ]; then
-  echo "PASS: no-matches case exits 0 (does not block)"
-  PASS=$((PASS+1))
-else
-  echo "FAIL: no-matches case exited $EXIT (expected 0)"
-  FAIL=$((FAIL+1))
-fi
-
-# Assertion 2: no injection output
-if [ -z "$OUT" ]; then
-  echo "PASS: no-matches case → empty stdout"
-  PASS=$((PASS+1))
-else
-  echo "FAIL: no-matches case should not inject. Got: $OUT"
-  FAIL=$((FAIL+1))
-fi
-
-echo "Results: $PASS passed, $FAIL failed"
+echo "PASS: $PASS manifest agents correctly skipped"
+echo "Test 05: $PASS pass / $FAIL fail"
 [ "$FAIL" -eq 0 ]

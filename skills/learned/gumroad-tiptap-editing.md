@@ -27,7 +27,7 @@ await page.evaluate((html) => {
 }, htmlString);
 ```
 
-After setContent, Gumroad still needs an explicit save trigger — click Save or trigger the keyboard shortcut. (<your-product-pipeline>/feedback_gumroad_tiptap_programmatic_edits.md, <your-web-app-1>/feedback_gumroad_tiptap_editor_instance.md)
+After setContent, Gumroad still needs an explicit save trigger — click Save or trigger the keyboard shortcut. (theshipitsystem/feedback_gumroad_tiptap_programmatic_edits.md, unstuckwithmolly/feedback_gumroad_tiptap_editor_instance.md)
 
 ## Gumroad-specific scope
 

@@ -1,0 +1,102 @@
+version: 1
+last_updated: 2026-05-24
+
+roles:
+  - id: builder
+    description: Code, infra, scripts, hooks, tools
+    pipeline_owner: builder
+  - id: creator
+    description: All content production
+    pipeline_owner: creator
+
+jtbd:
+  - id: ship-a-feature
+    role: builder
+    description: Implement a feature with tests, review, deploy
+    owner: builder
+    specialists: [product-lead, reviewer]
+    slash_command: /ship
+    default_scope: M
+    skills: [superpowers:test-driven-development]
+
+  - id: make-instagram-carousel
+    role: creator
+    description: Short-form social post for any brand
+    owner: creator
+    specialists: [content-qa]
+    skills: [brand-voice-router, carousel-writer]
+
+agents:
+  builder:
+    kind: pipeline_owner
+    model: sonnet
+    description: Owns /plan, /build, /ship, /fix
+    owns_slash_commands: [/plan, /build, /ship, /fix]
+    owns_jtbd: [ship-a-feature]
+    skills:
+      primary: [superpowers:test-driven-development]
+      chain: []
+    tools:
+      built_in: [Read, Write, Edit, Bash, AskUserQuestion, Task]
+      mcp: [mempalace]
+    can_invoke_specialists: [product-lead, reviewer]
+    notes: |
+      Foundation pipeline owner for code work.
+
+  creator:
+    kind: pipeline_owner
+    model: sonnet
+    description: All content production
+    owns_slash_commands: [/write]
+    owns_jtbd: [make-instagram-carousel]
+    skills:
+      primary: [brand-voice-router, carousel-writer]
+      chain: [humanize-ai-writing]
+    tools:
+      built_in: [Read, Write, Edit, AskUserQuestion]
+      mcp: [mempalace]
+    can_invoke_specialists: [content-qa]
+    notes: |
+      Owns /write across all brand sub-modes.
+
+  product-lead:
+    kind: utility_specialist
+    model: opus
+    description: Brief writing + brainstorming for L/XL
+    owns_jtbd: []
+    skills:
+      primary: [superpowers:brainstorming, superpowers:writing-plans]
+      chain: []
+    tools:
+      built_in: [Read, Write, AskUserQuestion]
+      mcp: [mempalace]
+    notes: |
+      Called by builder for L/XL spec writing.
+
+  reviewer:
+    kind: utility_specialist
+    model: sonnet
+    description: Read-only pre-merge code review
+    owns_jtbd: []
+    skills:
+      primary: []
+      chain: []
+    tools:
+      built_in: [Read, Grep, Glob, Bash]
+      mcp: [mempalace]
+    notes: |
+      Read-only; reports findings, never edits.
+
+  content-qa:
+    kind: utility_specialist
+    model: haiku
+    description: Read-only content checklist gate
+    owns_jtbd: []
+    skills:
+      primary: []
+      chain: []
+    tools:
+      built_in: [Read, Grep]
+      mcp: []
+    notes: |
+      Runs learned/qa-rules.md checklist.

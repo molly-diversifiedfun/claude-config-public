@@ -70,12 +70,13 @@ if [ "$IS_BRIEF_REQUEST" = "true" ]; then
   fi
 fi
 
-# Check if engineer is being asked to explore without a brief existing
+# Check if builder/engineer is being asked to explore without a brief existing
+# Phase 8.x: `builder` is the post-cutover name; `engineer` kept for deprecation window.
 IS_EXPLORE_REQUEST=false
-if echo "$PROMPT_LOWER" | grep -qE "(engineer.*explor|solution.*explor|explore.*solution|research.*how.*build)" 2>/dev/null; then
+if echo "$PROMPT_LOWER" | grep -qE "((builder|engineer).*explor|solution.*explor|explore.*solution|research.*how.*build)" 2>/dev/null; then
   IS_EXPLORE_REQUEST=true
 fi
-if echo "$DESC_LOWER" | grep -qE "(engineer.*explor|explore.*solution)" 2>/dev/null; then
+if echo "$DESC_LOWER" | grep -qE "((builder|engineer).*explor|explore.*solution)" 2>/dev/null; then
   IS_EXPLORE_REQUEST=true
 fi
 
@@ -105,18 +106,19 @@ fi
 # Don't scan long prompts (false-positives on pipeline boilerplate that mentions
 # downstream engineer dispatch).
 IS_BUILD_AGENT=false
-if [[ "$SUBAGENT_TYPE" == *"engineer"* ]]; then
+# Phase 8.x: `builder` is the post-cutover name; `engineer` kept for deprecation window.
+if [[ "$SUBAGENT_TYPE" == *"builder"* || "$SUBAGENT_TYPE" == *"engineer"* ]]; then
   IS_BUILD_AGENT=true
 fi
 if [ "$IS_BUILD_AGENT" = "false" ] && [ -z "$SUBAGENT_TYPE" ]; then
-  if echo "$DESC_LOWER" | grep -qE "^(build|engineer|implement|@engineer)\b" 2>/dev/null; then
+  if echo "$DESC_LOWER" | grep -qE "^(build|builder|engineer|implement|@builder|@engineer)\b" 2>/dev/null; then
     IS_BUILD_AGENT=true
   fi
 fi
 # Keep the prompt-anchored fallback for hand-written prompts that start with the
-# engineer persona ("You are the engineer..."). This is a strong positive signal.
+# builder/engineer persona ("You are the builder..."). This is a strong positive signal.
 if [ "$IS_BUILD_AGENT" = "false" ]; then
-  if echo "$PROMPT_LOWER" | grep -qE "^(you are the engineer|build feature|implement)" 2>/dev/null; then
+  if echo "$PROMPT_LOWER" | grep -qE "^(you are the (builder|engineer)|build feature|implement)" 2>/dev/null; then
     IS_BUILD_AGENT=true
   fi
 fi
@@ -128,6 +130,11 @@ if [ "$IS_BUILD_AGENT" = "true" ]; then
   fi
   # Research-only agents don't need test instructions
   if echo "$PROMPT_LOWER" | grep -qE "(research only|read.only|do not (write|edit|create)|no code change)" 2>/dev/null; then
+    HAS_TEST_INSTRUCTION=true
+  fi
+  # Behavior-preserving refactors that name the existing suite as their lock
+  if echo "$PROMPT_LOWER" | grep -qE "(refactor|behavior.preserv|extract.method)" 2>/dev/null && \
+     echo "$PROMPT_LOWER" | grep -qE "(test.*pass|suite.*green|run.*test|stay.*green|tests stay)" 2>/dev/null; then
     HAS_TEST_INSTRUCTION=true
   fi
 

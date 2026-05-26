@@ -1,18 +1,31 @@
 #!/usr/bin/env bash
-# inject-skills-for-agent.sh — PreToolUse:Agent hook (Phase 7.5)
-# Runs scripts/skills-prefilter.sh on the dispatch description and injects
-# the top-3 candidates into the subagent's prompt as a context block.
+# inject-skills-for-agent.sh — PreToolUse:Agent hook (Phase 7.5 → 8.x.4)
 #
-# Allowlisted subagents (only these get injection):
-#   engineer designer debugger content-social content-longform content-business tech-researcher
+# TWO modes, mutually exclusive:
 #
-# Input: JSON on stdin: {"tool_name":"Agent","tool_input":{"subagent_type":...,"description":...,"prompt":...}}
-# Output (Mechanism A — Claude Code PreToolUse spec): JSON on stdout with
-#   hookSpecificOutput.updatedInput.prompt (full prompt with skill block prepended).
-# Soft-fails open on every internal error — never blocks dispatch.
+# MODE 1 — Alias resolution (Phase 8.x.4): deprecated alias names get the
+#   FULL agent body of the correct new agent injected via updatedInput.prompt.
+#   updatedInput.subagent_type is NOT supported by the harness (crashes with
+#   "undefined is not an object"); prompt injection is the only viable lever.
+#   The dispatched general-purpose agent receives the new agent's complete
+#   definition (role, JTBDs, skills, notes) and behaves accordingly — not as
+#   clean as a real frontmatter load (no tool/skill grants) but far better
+#   than running generic. Deprecation notice included so the orchestrator
+#   learns the correct name for future dispatches.
+#
+#   Alias map: engineer→builder, content-social/longform/business→creator,
+#   tech-researcher/market-researcher→researcher, project-manager→operator.
+#
+# MODE 2 — Skill injection (Phase 7.5 legacy): if an alias is somehow NOT
+#   in the alias map (shouldn't happen), falls through to the old prefilter
+#   skill-injection path. Kept as defense-in-depth; expected to be dead code.
+#
+# Real manifest agents (builder, creator, etc.) are NOT touched — they load
+# their own .md body + frontmatter natively. See feedback_phase_7_5_hook_
+# hijacks_manifest_agents for why they MUST be excluded.
 #
 # Kill switch: SKILL_INJECT_FOR_AGENT=off
-# Log: ~/.claude/logs/inject-skills-for-agent.log (NDJSON, one line per fire/skip)
+# Log: ~/.claude/logs/inject-skills-for-agent.log
 
 set +e
 
@@ -20,91 +33,66 @@ LOG="$HOME/.claude/logs/inject-skills-for-agent.log"
 mkdir -p "$(dirname "$LOG")" 2>/dev/null
 
 log_outcome() {
-  local subagent="$1"
-  local query="$2"
-  local outcome="$3"
+  local subagent="$1" query="$2" outcome="$3"
   local ts; ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-  local query_short="${query:0:80}"
   printf '{"ts":"%s","subagent_type":"%s","query":"%s","outcome":"%s"}\n' \
-    "$ts" "$subagent" "$query_short" "$outcome" >> "$LOG" 2>/dev/null
+    "$ts" "$subagent" "${query:0:80}" "$outcome" >> "$LOG" 2>/dev/null
 }
 
-# Read stdin
 INPUT=$(cat 2>/dev/null)
-if [ -z "$INPUT" ]; then exit 0; fi
+[ -z "$INPUT" ] && exit 0
 
-# Defensive: only fire on Agent tool calls
 TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // ""' 2>/dev/null)
-if [ "$TOOL_NAME" != "Agent" ]; then exit 0; fi
+[ "$TOOL_NAME" != "Agent" ] && exit 0
 
-# Kill switch
 if [ "${SKILL_INJECT_FOR_AGENT:-on}" = "off" ]; then
   log_outcome "?" "" "skipped:kill_switch"
   exit 0
 fi
 
-# Allowlist check
 SUBAGENT=$(echo "$INPUT" | jq -r '.tool_input.subagent_type // ""' 2>/dev/null)
-case "$SUBAGENT" in
-  engineer|designer|debugger|content-social|content-longform|content-business|tech-researcher)
-    ;;
-  *)
-    log_outcome "$SUBAGENT" "" "skipped:not_allowlisted"
-    exit 0
-    ;;
-esac
-
-# Extract query: description first, fall back to prompt[:200]
-DESC=$(echo "$INPUT" | jq -r '.tool_input.description // ""' 2>/dev/null)
 PROMPT=$(echo "$INPUT" | jq -r '.tool_input.prompt // ""' 2>/dev/null)
 
-QUERY="$DESC"
-if [ -z "$QUERY" ]; then
-  QUERY="${PROMPT:0:200}"
+# ── MODE 1: Alias resolution ────────────────────────────────────────────
+# Map deprecated name → correct manifest agent name
+case "$SUBAGENT" in
+  engineer)                                          TARGET=builder ;;
+  content-social|content-longform|content-business)  TARGET=creator ;;
+  tech-researcher|market-researcher)                 TARGET=researcher ;;
+  project-manager)                                   TARGET=operator ;;
+  *)                                                 TARGET="" ;;
+esac
+
+if [ -n "$TARGET" ]; then
+  AGENT_FILE="$HOME/.claude/agents/${TARGET}.md"
+  if [ -f "$AGENT_FILE" ]; then
+    # Strip YAML frontmatter (--- ... ---) — harness can't apply those grants
+    AGENT_BODY=$(awk 'BEGIN{fm=0} /^---$/{fm++; next} fm>=2{print}' "$AGENT_FILE")
+    # Build the full prompt in a temp file so jq can safely JSON-escape it
+    TMPF=$(mktemp)
+    trap 'rm -f "$TMPF"' EXIT
+    cat > "$TMPF" <<EOFPROMPT
+<!-- DEPRECATED ALIAS: '$SUBAGENT' resolved to '$TARGET'. Use subagent_type='$TARGET' in future dispatches. -->
+${AGENT_BODY}
+
+---
+
+${PROMPT}
+EOFPROMPT
+    jq -n --rawfile np "$TMPF" \
+      '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"allow",updatedInput:{prompt:$np}}}' 2>/dev/null
+    rm -f "$TMPF" 2>/dev/null
+    log_outcome "$SUBAGENT" "" "alias_body_injected:$TARGET"
+    exit 0
+  else
+    # Agent file missing — soft-fail, let dispatch proceed as generic
+    log_outcome "$SUBAGENT" "" "alias_file_missing:$TARGET"
+    exit 0
+  fi
 fi
 
-if [ -z "$QUERY" ]; then
-  log_outcome "$SUBAGENT" "" "skipped:empty_query"
-  exit 0
-fi
-
-# Run prefilter
-PREFILTER_OUT=$(bash "$HOME/.claude/scripts/skills-prefilter.sh" "$QUERY" 2>/dev/null)
-PREFILTER_RC=$?
-
-if [ "$PREFILTER_RC" -ne 0 ] || [ -z "$PREFILTER_OUT" ]; then
-  log_outcome "$SUBAGENT" "$QUERY" "skipped:prefilter_error"
-  exit 0
-fi
-
-# Parse top-3 candidates (skip header lines starting with #)
-CANDIDATES=$(echo "$PREFILTER_OUT" | grep -vE '^#' | head -3)
-COUNT=$(echo "$CANDIDATES" | grep -cE '\|')
-
-if [ "$COUNT" -lt 3 ]; then
-  log_outcome "$SUBAGENT" "$QUERY" "skipped:fewer_than_3_candidates"
-  exit 0
-fi
-
-# Format injection block. Each prefilter line: <name>|<archetypes>|<description>|<untried>
-BLOCK="<!-- phase-7-5-injected-skills v1 -->"$'\n'"[Relevant skills for this task (Phase 7.5 prefilter):]"$'\n'
-while IFS= read -r line; do
-  [ -z "$line" ] && continue
-  NAME=$(echo "$line" | awk -F'|' '{print $1}')
-  DESC_EXCERPT=$(echo "$line" | awk -F'|' '{print $3}')
-  BLOCK="${BLOCK}- ${NAME} — ${DESC_EXCERPT}"$'\n'
-done <<< "$CANDIDATES"
-BLOCK="${BLOCK}"$'\n'"(Consider using one of these before reinventing.)"$'\n'"<!-- /phase-7-5-injected-skills -->"
-
-# Mechanism A: emit hookSpecificOutput with updatedInput prepending the block.
-# Field name per Claude Code PreToolUse hooks spec (code.claude.com/docs/en/hooks.md):
-#   hookSpecificOutput.updatedInput is an object merged into tool_input.
-NEW_PROMPT="${BLOCK}
-
-${PROMPT}"
-
-jq -n --arg np "$NEW_PROMPT" \
-  '{hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "allow", updatedInput: {prompt: $np}}}' 2>/dev/null
-
-log_outcome "$SUBAGENT" "$QUERY" "injected"
+# ── Non-alias, non-manifest agents: skip ─────────────────────────────────
+# Real manifest agents are NOT in the alias map, so they reach here and exit.
+# This is correct — they load natively and must NOT receive updatedInput.prompt.
+log_outcome "$SUBAGENT" "" "skipped:not_alias"
 exit 0

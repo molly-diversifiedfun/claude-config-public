@@ -1,6 +1,6 @@
 # Learned Patterns
 
-Cross-project learnings synthesized from session feedback. 28 patterns extracted from 200+ memory files across 11 projects, representing corrections you have made repeatedly. Two former entries (`competitive-history.md` and `hook-performance.md`) were moved to the memory/ directory on 2026-05-12 — they were rolling data, not patterns.
+Cross-project learnings synthesized from session feedback. 28 patterns extracted from 200+ memory files across 11 projects, representing corrections you has made repeatedly. Two former entries (`competitive-history.md` and `hook-performance.md`) were moved to the memory/ directory on 2026-05-12 — they were rolling data, not patterns.
 
 ## When to use
 Load at session start (CARL WORKFLOW_RULE_10 says "read MEMORY.md index, actively apply feedback memories"). These files are the distilled, actionable version of scattered memory feedback.
@@ -12,7 +12,7 @@ Load at session start (CARL WORKFLOW_RULE_10 says "read MEMORY.md index, activel
 | systematic-shortcutting.md | Don't skip steps to go faster (13 variants) | always-on | CARL WORKFLOW_RULE_0 |
 | never-fabricate.md | Never invent personal stories/numbers | always-on | CARL GLOBAL_RULE_6 |
 | ai-tell-avoidance.md | Kill AI writing tells (47, Notion, vocab) | brand-content, always-on | CARL WRITING + CONTENT-RULES |
-| ai-design-tells.md | Kill AI design tells (gradient blobs, symmetric grids, indigo primary, gradient pill CTAs) — visual/component/code sister to ai-tell-avoidance | web-app, brand-content | Pre-merge UI audit (26-point checklist); points to `<your-web-app-1>/docs/ai-design-tells.md` canonical 474-line ref |
+| ai-design-tells.md | Kill AI design tells (gradient blobs, symmetric grids, indigo primary, gradient pill CTAs) — visual/component/code sister to ai-tell-avoidance | web-app, brand-content | Pre-merge UI audit (26-point checklist); points to `unstuckwithmolly/docs/ai-design-tells.md` canonical 474-line ref |
 | verify-before-commit.md | Read agent output, surface silent failures, ask clear questions | always-on | CARL GLOBAL_RULE_5 |
 | delegation-discipline.md | Use the right agent; reuse existing skills before building | always-on | CARL WORKFLOW_RULE_5 |
 | voice-and-content-rules.md | Voice register, pillars, format mix, copy is sacred | brand-content | CARL WRITING + CONTENT-RULES |
@@ -20,13 +20,13 @@ Load at session start (CARL WORKFLOW_RULE_10 says "read MEMORY.md index, activel
 | nonfiction-sourcing.md | Source facts before writing claims | brand-content | CARL WRITING_RULE_5 |
 | deploy-iteration-discipline.md | 3-deploy rule, observability, change-set drift, framework abandonment | web-app, telegram-bot, infra-config | (process discipline) |
 | secrets-routing.md | Secrets go direct to deploy target; Raw Editor leaks | always-on | CARL RIGOR + rejected-patterns.md |
-| n8n-production-patterns.md | n8n hard limits, Apify/Postgres/Meta gotchas, fix coverage upstream | telegram-bot, content-pipeline | (project: <your-content-pipeline>) |
+| n8n-production-patterns.md | n8n hard limits, Apify/Postgres/Meta gotchas, fix coverage upstream | telegram-bot, content-pipeline | (project: content-system) |
 | mass-rewrite-mechanics.md | Batch-Read all targets before batch-Write when rewriting ≥3 files | always-on | (tool discipline) |
 | task-budget-heuristic.md | Estimate token cost before multi-phase tasks; surface phased options at ~60% | always-on | (context discipline) |
 | dogfood-by-using-the-system-to-document-itself.md | First real run of a new system should produce its own docs/release artefact | infra-config | (process discipline) |
 | qa-rules.md | 23-item content QA checklist (operational config for @content-qa) | brand-content | (agent config) |
 | research-budgets.md | Time + cost ceilings per research type for @market-researcher / @tech-researcher | always-on | (agent config) |
-| bot-conversational-ux.md | Cross-bot UX for Telegram products: buttons over free-text, no gating, trust character over rules | telegram-bot | (project: <your-bot> + <your-agent-project> + <your-bot-1>) |
+| bot-conversational-ux.md | Cross-bot UX for Telegram products: buttons over free-text, no gating, trust character over rules | telegram-bot | (project: nancy + <your-agent-project> + shipitwithmolly) |
 | domain-repo-analytics-mapping.md | Verify domain↔repo↔analytics via Vercel `domains` field BEFORE wiring (brand name lies) | web-app | (pre-flight blocker) |
 | hook-design-discipline.md | Calibrate enforcement hooks by blast radius; hard blocks only at narrow boundaries | infra-config | (claude-config process) |
 | gumroad-tiptap-editing.md | Use `editor.commands.setContent()` via Playwright on TipTap-based editors (Gumroad, Ghost, etc.) | content-pipeline, brand-content | (tool recipe) |
@@ -47,7 +47,7 @@ Patterns are tagged with `archetypes: [list]` in frontmatter. The UserPromptSubm
 
 ## Last synthesis
 
-2026-05-23 EVENING (4 promotes via `/promote` batch — Plan A + Plan B <your-product-pipeline> canonical consolidation) — Synthesized 4 feedback files into 3 extends + 1 new pattern; 2 files kept project-local (h2-regen markdown specifics, phase 7.7a.4 retrospective archaeology).
+2026-05-23 EVENING (4 promotes via `/promote` batch — Plan A + Plan B ship-it-system canonical consolidation) — Synthesized 4 feedback files into 3 extends + 1 new pattern; 2 files kept project-local (h2-regen markdown specifics, phase 7.7a.4 retrospective archaeology).
 
 New file (1):
 - `cross-repo-ci-discipline.md` — three concrete data points from one session (Plan A: CI to claude-skills, Plan B: intra-repo no CI, rejected Plan-C: cross-repo from old location). Source: `feedback_cross_repo_ci_lives_with_canonical_source.md`.
@@ -130,9 +130,9 @@ Bumped `last-validated: 2026-05-20` on mempalace-discipline. Pattern count uncha
 
 2026-05-19 NIGHT-6 — Synthesized 10 new feedback files from the MemPalace migration + secrets scrub session (gitleaks, filter-repo, hook bugs, mempalace patterns). Extended 2 existing patterns: `hook-design-discipline` (block-dangerous --force-with-lease regex bug + workaround + cwd-drift Stop hook root cause + self-modification refusal pattern), `secrets-routing` (post-rotation gitleaks audit categorization with 9 bucket classes + `.mcp.json` as a secrets file). Created 2 new patterns: `git-history-scrub-discipline` (5 preconditions + bare --force not --with-lease + replacements file format + filter-repo strips origin + 2nd-round expectation), `mempalace-discipline` (wing-filter fail-open + status check + 3-layer query architecture + bulk-load with gitleaks gate + query discipline). Total patterns: 22 → 24.
 
-2026-05-18 — Synthesized ~100 new feedback files across 7 project memory dirs (workspace, <your-content-pipeline>, <your-web-app-1>, <your-agent-project>, <your-bot>, <your-bot-1>, <your-product-pipeline>, <your-marketing-stack>). Extended 7 existing patterns: `verify-before-commit` (smoke-after-deploy + registry membership from dispatch_investigate incident), `deploy-iteration-discipline` (observability before deploy 2), `n8n-production-patterns` (Telegram-via-n8n + Supabase/PostgREST silent failures), `delegation-discipline` (subagent dispatch realities + hook-bypass phrasing), `never-fabricate` (case-study + vaporware + labeled-demo sub-rules), `documentation-after-build` (cross-surface sweep + markdown-canonical PDF pipeline), `voice-and-content-rules` (nurture voice + audience-matched LPs). Created 5 new patterns: `bot-conversational-ux` (cross-bot UX from 3 Telegram products), `domain-repo-analytics-mapping` (blocking — verify Vercel `domains` before wiring), `hook-design-discipline` (block-vs-remind axis), `gumroad-tiptap-editing` (TipTap commands API recipe), `audit-trail-before-speculative-fix` (instrument-first debugging). Total patterns: 17 → 22.
+2026-05-18 — Synthesized ~100 new feedback files across 7 project memory dirs (workspace, content-system, unstuckwithmolly, <your-agent-project>, nancy, shipitwithmolly, theshipitsystem, marketing-os). Extended 7 existing patterns: `verify-before-commit` (smoke-after-deploy + registry membership from dispatch_investigate incident), `deploy-iteration-discipline` (observability before deploy 2), `n8n-production-patterns` (Telegram-via-n8n + Supabase/PostgREST silent failures), `delegation-discipline` (subagent dispatch realities + hook-bypass phrasing), `never-fabricate` (case-study + vaporware + labeled-demo sub-rules), `documentation-after-build` (cross-surface sweep + markdown-canonical PDF pipeline), `voice-and-content-rules` (nurture voice + audience-matched LPs). Created 5 new patterns: `bot-conversational-ux` (cross-bot UX from 3 Telegram products), `domain-repo-analytics-mapping` (blocking — verify Vercel `domains` before wiring), `hook-design-discipline` (block-vs-remind axis), `gumroad-tiptap-editing` (TipTap commands API recipe), `audit-trail-before-speculative-fix` (instrument-first debugging). Total patterns: 17 → 22.
 
-2026-05-12 (late) — Added `ai-design-tells.md` as the visual/component-level sister to `ai-tell-avoidance.md`. Synthesized from a research session that catalogued AI-coded design defaults (Lovable/v0/Cursor aesthetic — gradient blobs, symmetric grids, indigo primary, gradient pill CTAs) and the <your-first-brand> alternatives. Brief learned pattern + 26-point audit checklist + 1-sentence rule ("if you can't tell which company built this from design alone, rebuild it"). Canonical 474-line reference at `~/github/<your-web-app-1>/docs/ai-design-tells.md`.
+2026-05-12 (late) — Added `ai-design-tells.md` as the visual/component-level sister to `ai-tell-avoidance.md`. Synthesized from a research session that catalogued AI-coded design defaults (Lovable/v0/Cursor aesthetic — gradient blobs, symmetric grids, indigo primary, gradient pill CTAs) and the Unstuck alternatives. Brief learned pattern + 26-point audit checklist + 1-sentence rule ("if you can't tell which company built this from design alone, rebuild it"). Canonical 474-line reference at `~/github/unstuckwithmolly/docs/ai-design-tells.md`.
 
 2026-05-12 — Phase C of skills-overlap-cleanup: moved `competitive-history.md` and `hook-performance.md` to `memory/` (they're project data, not learned patterns); added `dogfood-by-using-the-system-to-document-itself` (synthesized from doc-site dogfood run); added 4 previously-unlisted patterns (mass-rewrite-mechanics, task-budget-heuristic, qa-rules, research-budgets) to the index.
 

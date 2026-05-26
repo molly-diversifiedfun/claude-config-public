@@ -1,6 +1,6 @@
 # Architecture — How the Pieces Fit
 
-Claude Code's extensibility surface has five distinct extension points. They look similar from a distance but compose differently.
+Claude Code's extensibility surface has six distinct extension points. They look similar from a distance but compose differently.
 
 ```
               ┌─────────────────────────────────────────────────┐
@@ -9,18 +9,19 @@ Claude Code's extensibility surface has five distinct extension points. They loo
               │  Sets persona, communication style, preferences │
               └────────────────────────┬─────────────────────────┘
                                         │
-   ┌─────────────────┬──────────────────┼──────────────────┬──────────────────┐
-   ▼                 ▼                  ▼                  ▼                  ▼
-┌────────┐      ┌────────┐         ┌────────┐         ┌────────┐         ┌────────┐
-│ Skills │      │ Agents │         │Commands│         │ Rules  │         │ Hooks  │
-└────────┘      └────────┘         └────────┘         └────────┘         └────────┘
-auto-invoked   user-invoked       user-invoked       auto-injected      auto-fired
-when desc      via Task tool      via "/name"        when triggers      on lifecycle
-matches user                                          hit                events
-intent
+   ┌──────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
+   ▼          ▼          ▼          ▼          ▼          ▼          ▼
+┌──────┐  ┌──────┐  ┌────────┐ ┌──────┐  ┌────────┐ ┌──────┐  ┌──────┐
+│Skills│  │Agents│  │Commands│ │Rules │  │Learned │ │Hooks │  │Scripts│
+└──────┘  └──────┘  └────────┘ └──────┘  │Patterns│ └──────┘  └──────┘
+auto-     user-     user-      always-on  └────────┘ auto-     standalone
+invoked   invoked   invoked    static     archetype-  fired     CLIs called
+on desc   via Task  via /name  context    filtered   on        by hooks +
+match                                     dynamic    lifecycle commands
+                                          context    events
 ```
 
-## Skills (`skills/`, 36 total)
+## Skills (`skills/`, ~44 total)
 
 **Purpose:** Specialized capabilities Claude invokes *automatically* when the user's request matches the skill's `description` field.
 
@@ -35,14 +36,14 @@ intent
 
 See: [docs/skills.md](skills.md) for the full catalog.
 
-## Agents (`agents/`, 14 total)
+## Agents (`agents/`, 12 total)
 
 **Purpose:** Specialized subagent roles invokable via the `Task` tool. Each runs in its own context window, has its own model + tool palette, and produces a focused output back to the parent.
 
-**Activation:** Explicit. Either via a slash command (`/build` invokes `engineer`, `/plan` invokes `product-lead`) or manually via Task tool with `subagent_type=engineer`.
+**Activation:** Explicit. Either via a slash command (`/build` invokes `builder`, `/plan` invokes `product-lead`, `/decide` invokes `strategist`) or manually via Task tool with `subagent_type=builder`.
 
 **Examples:**
-- `engineer` (Sonnet) — implements approved specs with TDD
+- `builder` (Sonnet) — implements approved specs with TDD
 - `debugger` (Opus) — investigates gnarly bugs, root-cause analysis
 - `reviewer` (Sonnet) — pre-merge code review, read-only
 
@@ -50,86 +51,130 @@ See: [docs/skills.md](skills.md) for the full catalog.
 
 See: [docs/agents.md](agents.md) for the team roster.
 
-## Commands (`commands/`, 18 total)
+## Commands (`commands/`, ~33 total)
 
 **Purpose:** User-typed entry points (`/build`, `/ship`, `/handoff`). Each command is a markdown file whose body becomes the prompt when typed.
 
 **Activation:** User types `/<name>` in chat.
 
 **Examples:**
-- `/build` — standard feature mode (lightweight spec → 3-5 agents → auto-proceed)
-- `/ship` — full pipeline mode, Smart v3 (Phase 8.0). Stage 0 calls Haiku 4.5 to pick S/M/L/XL scope, then only the stages that fit run. Each stage explicitly binds a [superpowers](https://github.com/obra/superpowers) skill. See `docs/ship-pipeline-v2.md`.
-- `/handoff` — generate a session-continuity doc
+- `/build` — standard feature mode (lightweight spec, 3-5 agents, auto-proceed)
+- `/ship` — Smart v3 (Phase 8.0). Stage 0 calls Haiku to pick S/M/L/XL scope; only stages that fit run.
+- `/decide` — routes to strategist agent for structured decision-making
+- `/skills`, `/bake-off`, `/consolidate-skills` — skill catalog management
+- `/system-retro` — retrospective over recent sessions
 
-**When to add one:** When a workflow has 3+ predictable steps and you want a one-token entry point. Commands are sugar over "type the same paragraph every time you want to do X."
+**When to add one:** When a workflow has 3+ predictable steps and you want a one-token entry point.
 
 See: [docs/commands.md](commands.md) for the reference.
 
-## Rules (`rules/`, 11 files in 3 domains)
+## Rules (`rules/`, 13 files in 4 domains)
 
-**Purpose:** Always-on context that gets injected into every session. Coding conventions, testing requirements, etc.
+**Purpose:** Static always-on coding/git/testing/security conventions. Always loaded.
 
-**Activation:** Auto-injected via the **CARL** rule loader (a hook at `UserPromptSubmit`). CARL loads `rules/common/*.md` always; domain-specific rules load when triggers in the user's message match.
+**Activation:** Listed in `CLAUDE.md` and loaded as part of the session preamble.
 
 **Domains:**
-- `common/` — universal (coding-style, git-workflow, testing, security, agents, performance, patterns)
+- `common/` — universal (coding-style, git-workflow, testing, security, agents, performance, patterns, definition-of-done)
+- `content-system/` — content production rules (caption-generation, content-plan-enforcement)
 - `python/` — Python style
-- `typescript/` — TypeScript style
+- `typescript/` — TypeScript style + patterns
 
-> Note: the original private config carried a fourth `<your-content-pipeline>/` domain with brand-specific content production rules (caption-generation, content-plan-enforcement). It was stripped from this public snapshot — bring your own content rules if you have a content pipeline.
-
-**When to add one:** When the rule should hold across most/all sessions in a domain. Don't put rules in skills (which only fire on match); rules are for things that need to be top-of-mind always.
+**When to add one:** When the rule should hold across most/all sessions in a domain.
 
 See: [docs/rules.md](rules.md) for the rule system.
 
-## Hooks (`hooks/`, 21 scripts)
+## Learned Patterns (`skills/learned/`, ~44 files)
+
+**Purpose:** Cross-project corrections and discipline rules, synthesized from session feedback. The dynamic counterpart to static `rules/`. Each pattern has YAML frontmatter with `severity` and `archetypes` fields that control when it loads.
+
+**Activation:** `hooks/archetype-injector.sh` (UserPromptSubmit). Resolves the cwd to a project archetype, then injects:
+- All `severity: blocking` patterns (5 patterns, always-on regardless of archetype)
+- Archetype-matched `severity: warning` patterns (filtered by the `archetypes:` field)
+
+**Severity levels:**
+- `blocking` (5 patterns) — always-on: `never-fabricate`, `secrets-routing`, `auto-mode-classifier-discipline`, `verify-before-commit`, `cli-integration-discipline`
+- `warning` (~39 patterns) — loaded when archetype matches (e.g., `n8n-build-patterns` only loads for `telegram-bot` and `infra-config` archetypes)
+
+**When to add one:** When a correction or discipline has been learned the hard way and should prevent the same mistake across future sessions. Use `/promote` to turn a session feedback file into a learned pattern.
+
+**History:** Previously, a separate system called CARL (Context Augmentation & Reinforcement Layer) handled dynamic rule injection via 11 domain files with 130 rules. In the 2026-05-26 simplification, ~110 rules were found to duplicate existing learned patterns, and ~25 unique rules were migrated to 7 new learned patterns. CARL now only handles star-commands (`*dev`, `*review`, `*brief`).
+
+## Star-Commands (`carl/commands`)
+
+**Purpose:** Mode-switching shortcuts (`*dev`, `*review`, `*brief`, `*plan`, `*discuss`, `*debug`, `*explain`). Each sets behavioral rules for the current interaction style.
+
+**Activation:** `hooks/carl-loader.sh` (UserPromptSubmit). Detects `*word` pattern in the prompt, loads matching rules from `carl/commands`.
+
+**When to use:** Type `*brief` for bullet-point-only mode, `*dev` for code-first mode, `*review` for code review mode.
+
+## Hooks (`hooks/`, ~24 scripts)
 
 **Purpose:** Shell scripts wired into Claude Code's lifecycle events. They run *automatically* on `PreToolUse`, `PostToolUse`, `Stop`, `UserPromptSubmit`, etc., and can validate, transform, log, or block.
 
 **Activation:** Configured in `settings.json` under the relevant lifecycle event. Each hook receives a JSON payload over stdin.
 
 **Examples:**
-- `carl-loader.sh` (UserPromptSubmit) — injects matching rule files into context
-- `agent-batch-validator.sh` (PreToolUse:Agent) — enforces ≤4 file path refs in agent prompts
-- `session-retrospective.sh` (Stop) — 7-check Definition-of-Done enforcement
-- `content-qa-guarded.sh` (PostToolUse:Write|Edit) — checks PM jargon, banned numbers, handle correctness
+- `archetype-injector.sh` (UserPromptSubmit) — resolves cwd → archetype, injects relevant learned patterns
+- `block-dangerous.sh` (PreToolUse:Bash) — blocks destructive commands (rm -rf, force-push, curl|sh)
+- `session-retrospective.sh` (Stop) — DoD enforcement with grace (1st miss = nudge, 2nd+ = block)
+- `caption-guard-unified.sh` (PreToolUse:Bash+Write|Edit) — enforces caption pipeline
+- `mempalace-wrapper.sh` (Stop/PreCompact/SessionStart) — long-tail memory auto-save + wake-up
 
-**When to add one:** When the behavior must run *every time* a lifecycle event fires, regardless of whether Claude "remembers" to. Hooks are the only mechanism that's truly automatic — skills/agents/commands all require Claude to invoke them.
+**Kill switches:** Every hook has an env var that disables it. Full reference at `hooks/KILL_SWITCHES.md`.
 
-See: [docs/hooks.md](hooks.md) for the hook reference.
+**When to add one:** When the behavior must run *every time* a lifecycle event fires, regardless of whether Claude "remembers" to. Hooks are the only mechanism that's truly automatic.
+
+See: [docs/hooks.md](hooks.md) for the full hook reference.
+
+## Scripts (`scripts/`, ~21 utilities)
+
+**Purpose:** Standalone Python/Bash utilities called by hooks, commands, or directly by the user.
+
+**Categories:**
+- **Catalog management** — `skills-prefilter.sh`, `consolidate-skills.py`, `merge-skills.py`, `bake-off-prefilter.sh`, `bake-off-record.sh`
+- **Ship pipeline** — `ship-scope-classify.py` (Haiku S/M/L/XL), `ship-scope-replay.py`, `ship-skill-status.py`, `ship-preflight.py`
+- **Observability** — `system-retro.py` (Haiku retrospective judge)
+- **Validation** — `validate-frontmatter.sh`, `validate-manifest.sh`, `validate-skill-archetypes.sh`, `validate-work-type-chains.sh`
+- **Manifest** — `render-manifest.py`, `classify-scope.sh`
+- **MemPalace** — `mempalace-bulk-load.sh`
 
 ## How they compose — a worked example
 
 User says: *"write me an Instagram caption about ship-it culture"*
 
-1. **Hook** (`carl-loader.sh`) fires on UserPromptSubmit → injects `rules/common/coding-style.md` and any domain rules matching the prompt (e.g. coding rules for code-shaped prompts).
+1. **Hook** (`archetype-injector.sh`) fires on UserPromptSubmit → resolves archetype, injects relevant learned patterns (including `ai-tell-avoidance`, `present-labeled-options`)
 2. **Rule** (auto-loaded content rules) — Claude now knows: max 1 tool mention, no PM jargon, @your-handle handle, no AI-tell numbers like 47.
-3. **Skill** (`brand-voice-router`) auto-invokes because "Instagram caption" matches its trigger description → routes to <your brand> voice.
+3. **Skill** (`brand-voice-router`) auto-invokes because "Instagram caption" matches its trigger → routes to <your brand> voice.
 4. **Skill** (`humanize-ai-writing`) auto-invokes after draft → strips AI patterns.
 5. **Skill** (`hooks` skill, not the lifecycle hook!) auto-invokes for the opener → 5 hook variants.
-6. **Hook** (`content-qa-guarded.sh`) fires on PostToolUse:Write → validates the saved draft against learned/qa-rules.md.
-7. **Hook** (`session-retrospective.sh`) fires on Stop → enforces DoD checklist before session ends.
+6. **Hook** (`content-qa-guarded.sh`) fires on PostToolUse:Write → validates the saved draft.
+7. **Hook** (`session-retrospective.sh`) fires on Stop → checks HANDOFF.md + TASKS.md freshness (grace mechanism: nudge on 1st miss, block on 2nd+).
 
-No slash command, no agent — just skills and rules and hooks composing.
-
-For implementation work, the picture inverts: user types `/build`, which invokes the `engineer` agent, which uses skills and rules during its work, with hooks firing throughout.
+For implementation work, the picture inverts: user types `/build`, which invokes the `builder` agent, which uses skills and rules during its work, with hooks firing throughout.
 
 ## Source-of-truth model
 
-This repo is the source of truth for `~/.claude/{skills,agents,commands,rules,hooks,CLAUDE.md,settings.local.json}`. The flow:
+This repo is the source of truth for `~/.claude/{skills,agents,commands,rules,hooks,scripts,CLAUDE.md}` PLUS `~/.carl/` → `repo/carl/`. The flow:
 
 ```
 Primary Mac (where you edit live)
-    ~/.claude/skills/foo edited
-    │
-    ├─→ bin/sync.sh: pulls ~/.claude/* into the repo (sanitizes paths)
+    ~/.claude/skills/foo edited      ~/.carl/commands edited
+    │                                │
+    └────────────┬───────────────────┘
+                 │
+    bin/sync.sh: pulls into the repo
     │
     └─→ git commit + push
             │
             └─→ Mac mini (or any other machine)
                     git pull
                     │
-                    └─→ bin/install.sh: pushes repo content into ~/.claude/*
+                    └─→ bin/install.sh: writes repo content back to ~/.claude/* + ~/.carl/*
 ```
 
 `settings.json` is **never** in this repo (has secrets). `projects/`, `sessions/`, `cache/`, `backups/`, `telemetry/` are also excluded — that's runtime state, not config.
+
+## Public mirror
+
+A sanitized snapshot lives at [`<your-github-username>/claude-config-public`](https://github.com/<your-github-username>/claude-config-public). Generated via `bin/sanitize-for-public.sh` + a manual cleanup pass.

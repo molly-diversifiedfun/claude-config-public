@@ -2,8 +2,8 @@
 set -euo pipefail
 HOOK="$HOME/.claude/hooks/archetype-injector.sh"
 
-# Sub-dir of ~/github/<your-bot> → should inherit telegram-bot
-INPUT='{"cwd":"$HOME/github/<your-bot>/src/handlers","prompt":""}'
+# Sub-dir of ~/github/nancy → should inherit telegram-bot
+INPUT='{"cwd":"$HOME/github/nancy/src/handlers","prompt":""}'
 CTX=$(echo "$INPUT" | "$HOOK" | jq -r '.hookSpecificOutput.additionalContext')
 
 if ! echo "$CTX" | grep -q "Archetype: telegram-bot"; then

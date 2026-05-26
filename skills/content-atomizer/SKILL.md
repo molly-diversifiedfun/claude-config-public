@@ -1,9 +1,28 @@
 ---
 name: content-atomizer
-description: Transform long-form content into 15+ platform-ready assets. Use when repurposing a blog post, article, or guide into social media content. One piece becomes threads, carousels, audiograms, video scripts, quizzes, and discussion prompts across all major platforms.
+description: Expert social media strategy and content atomization in one skill. Use when the user wants to create, schedule, or optimize social media content for LinkedIn, Twitter/X, Instagram, TikTok, Facebook, Threads, Pinterest, or other platforms — OR when they want to transform existing long-form content into platform-ready assets. Handles everything from single-post creation, content pillars, and hook writing, to transforming one pillar piece (essay, blog post, case study, talking point) into up to 19 cross-platform assets with a staggered release calendar. Operates in Brand Mode (6 Instagram/Reel derivatives with Voice DNA compliance, using Welsh's 1-3-5 extraction method and story angle selection) or Full Atomization Mode (19 assets: Twitter/X threads, LinkedIn carousels, TikTok scripts, email excerpts, podcast outlines, quizzes, infographics, and more). Chains with hooks and humanize-ai-writing for brand compliance. Triggers: social media, LinkedIn post, Twitter thread, tweet ideas, LinkedIn carousel, social media strategy, grow my following, content calendar, social scheduling, engagement, viral content, what should I post, repurpose this content, repurpose content, repurpose this, turn this into content, atomize for brand, content derivatives, 1 to many content, pillar to posts, atomize content, content atomizer, turn article into, repurpose article, content repurposing.
 triggers:
-  - atomize content
+  - social media
+  - LinkedIn post
+  - Twitter thread
+  - tweet ideas
+  - LinkedIn carousel
+  - social media strategy
+  - grow my following
+  - content calendar
+  - social scheduling
+  - engagement
+  - viral content
+  - what should I post
+  - repurpose this content
   - repurpose content
+  - repurpose this
+  - turn this into content
+  - atomize for brand
+  - content derivatives
+  - 1 to many content
+  - pillar to posts
+  - atomize content
   - content atomizer
   - turn article into
   - repurpose article
@@ -11,36 +30,199 @@ triggers:
 allowed-tools: Read Write Edit Grep Glob WebSearch AskUserQuestion
 ---
 
-# Content Atomizer
+<!-- Auto-inject brand config if available -->
+Brand config: !`cat unstuck/brand-config.json 2>/dev/null || echo "No brand config found — using defaults"`
 
-Transform one piece of long-form content into 19 platform-ready distribution assets across social, video, audio, written, and interactive formats.
+# Content Atomizer — Social Strategy & Platform-Ready Derivatives
+
+Turn one pillar piece into up to 19 platform-ready assets, or build social content from scratch. Two core capabilities in one skill:
+
+1. **Social Strategy Mode** — Create content from scratch: single posts, content pillars, hooks, platform-specific formats, engagement and analytics guidance
+2. **Content Atomization** — Transform existing long-form content into derivatives:
+   - **Brand Mode**: 6 brand-voice-matched Instagram/Reel assets (Voice DNA compliant)
+   - **Full Atomization Mode**: 19 cross-platform assets with staggered release calendar
+
+---
+
+## Mode Selection
+
+| Mode | When to Use | Output |
+|------|-------------|--------|
+| **Social Strategy** | Creating content from scratch; single posts, hooks, pillars | Platform-specific posts, calendars, hook variants |
+| **Brand Mode** (default when brand config exists) | Instagram-first brand with Voice DNA on file | 6 derivatives: 3 Reels, 2 carousels, 1 static post |
+| **Full Atomization Mode** | Multi-platform distribution, no brand constraint | 19 assets across social, video/audio, written, interactive |
+| **Custom Mode** | User requests a specific subset | Whatever formats are requested |
+
+If a `content-system/{brand}/{brand}-voice-dna.md` file exists → default to Brand Mode for repurposing requests.
+If no brand config is found → default to Full Atomization Mode.
+If user specifies formats or says "all platforms" → Custom or Full Atomization Mode.
+If user is asking about social strategy, posting, or content from scratch → Social Strategy Mode.
+
+---
+
+## Before Starting
+
+**Check for product marketing context first:**
+If `.agents/product-marketing-context.md` exists (or `.claude/product-marketing-context.md` in older setups), read it before asking questions. Use that context and only ask for what's missing.
+
+**If user pastes content and asks to repurpose or atomize it, proceed immediately.** Don't over-ask.
+
+For Social Strategy Mode, gather this context if not provided:
+
+### Goals
+- What's the primary objective? (Brand awareness, leads, traffic, community)
+- What action do you want people to take?
+- Personal brand, company brand, or both?
+
+### Audience
+- Who are you trying to reach?
+- What platforms are they most active on?
+- What content do they engage with?
+
+### Brand Voice
+- What's the tone? (Professional, casual, witty, authoritative)
+- Any topics to avoid?
+- Any specific terminology or style guidelines?
+
+### Resources
+- How much time can you dedicate to social?
+- Do you have existing content to repurpose?
+- Can you create video content?
+
+---
+
+## Brand Mode Setup
+
+**Step 1: Load brand context.** Read these files:
+
+1. **Voice DNA**: `content-system/{brand}/{brand}-voice-dna.md`
+2. **Brand rules**: `.claude/rules/brands/{brand}.md`
+3. **Content strategy** (if exists): `content-system/{brand}/strategy.md`
+
+If Voice DNA doesn't exist and user asked for brand-matched output, stop and tell them to run `voice-extractor` first.
+
+**Step 2: Read the source content in full.** URL (via firecrawl), file path, or pasted text. Do NOT summarize or paraphrase before extracting.
+
+---
+
+## Platform Quick Reference
+
+| Platform | Best For | Frequency | Key Format | Algorithm Priority |
+|----------|----------|-----------|------------|-------------------|
+| LinkedIn | B2B, thought leadership | 3–5x/week | Carousels, text posts | Dwell time, comments |
+| Twitter/X | Tech, real-time, community | 3–10x/day | Threads, hot takes | Replies, quotes, bookmarks |
+| Instagram | Visual brands, lifestyle | 1–2 posts + Stories daily | Reels, carousels | Saves, shares, watch time |
+| TikTok | Brand awareness, younger audiences | 1–4x/day | Short-form video | Completion rate, shares |
+| YouTube Shorts | SEO-driven video | 3–5x/week | Shorts, how-tos | Watch time, subscribe clicks |
+| Facebook | Communities, local businesses | 1–2x/day | Groups, native video | Native content engagement |
+| Pinterest | Evergreen traffic | Daily | Pins, idea pins | Saves, click-through |
+| Threads | Authentic takes | 1–3x/day | Conversational posts | Replies, reposts |
+| Podcast | Deep-dive expansion | Weekly | Episodes, audiograms | Completion, reviews |
+
+**Universal 2025–2026 Trends:**
+- "Follow for more" CTAs penalized across platforms
+- Saves/bookmarks weighted higher than likes
+- Completion rate matters more than views
+- Native content outperforms cross-posted
+- Carousels/threads outperform single posts
+
+**For detailed platform strategies**: See [references/platforms.md](references/platforms.md)
+
+---
+
+## Content Pillars Framework
+
+Build content around 3–5 pillars that align with expertise and audience interests.
+
+### Example for a SaaS Founder
+
+| Pillar | % of Content | Topics |
+|--------|--------------|--------|
+| Industry insights | 30% | Trends, data, predictions |
+| Behind-the-scenes | 25% | Building the company, lessons learned |
+| Educational | 25% | How-tos, frameworks, tips |
+| Personal | 15% | Stories, values, hot takes |
+| Promotional | 5% | Product updates, offers |
+
+### Pillar Development Questions
+
+For each pillar:
+1. What unique perspective do you have?
+2. What questions does your audience ask?
+3. What content has performed well before?
+4. What can you create consistently?
+5. What aligns with business goals?
+
+---
+
+## Hook Formulas
+
+The first line determines whether anyone reads the rest.
+
+### Curiosity Hooks
+- "I was wrong about [common belief]."
+- "The real reason [outcome] happens isn't what you think."
+- "[Impressive result] — and it only took [surprisingly short time]."
+
+### Story Hooks
+- "Last week, [unexpected thing] happened."
+- "I almost [big mistake/failure]."
+- "3 years ago, I [past state]. Today, [current state]."
+
+### Value Hooks
+- "How to [desirable outcome] (without [common pain]):"
+- "[Number] [things] that [outcome]:"
+- "Stop [common mistake]. Do this instead:"
+
+### Contrarian Hooks
+- "Unpopular opinion: [bold statement]"
+- "[Common advice] is wrong. Here's why:"
+- "I stopped [common practice] and [positive result]."
+
+**For post templates and more hooks**: See [references/post-templates.md](references/post-templates.md)
+
+---
+
+## Quick Mode vs. Deep Mode (Atomization)
+
+### Quick Mode (Default)
+Atomize the content using the templates below. Fast, reliable, good for most use cases.
+
+### Deep Mode
+When the user asks for "optimized" or "researched" versions:
+1. Use WebSearch to find top-performing content in their niche
+2. Analyze current platform algorithm priorities
+3. Customize hooks based on what's working now
+4. Add platform-specific hashtag and timing recommendations
+
+---
+
+## Atomization Input
+
+1. **Source content** — URL, file path, or pasted text
+2. **Brand** — which brand (default: unstuck); omit for platform-agnostic atomization
+3. **Mode** (optional) — Brand, Full Atomization, or Custom
+4. **Target formats** (optional) — subset request (e.g., "just Reels," "no video")
+5. **Audience context** (optional)
+6. **Calendar context** (optional) — which pillar/date this is for
+
+---
 
 ## What This Produces
 
-**1 long-form piece → 19 platform-ready assets**
+**1 long-form piece → up to 19 platform-ready assets**
 
 - 6 social (Thread, LinkedIn, IG, Short Post, Threads, Pinterest)
 - 5 video/audio (Video, TikTok, Shorts, Audiogram, Podcast)
 - 3 written (Email, Blog spin-offs, SEO snippets)
 - 5 interactive/visual (Quiz, Discussion, Challenge, Infographic, Quotes)
 
-## Input
-
-Ask the user to provide:
-1. **Source content** - URL, file path, or paste the content directly
-2. **Target platforms** - Which outputs they want (default: all)
-3. **Audience context** - Who is this for? (optional but helpful)
-
-If the user just pastes content, proceed immediately. Don't over-ask.
-
-## Output Formats
-
-**19 formats across 5 categories.** Templates in `assets/`:
-- `social-templates.yaml` - Twitter, LinkedIn, IG, Threads, Pinterest
-- `video-audio-templates.yaml` - Video, TikTok, Shorts, Audiogram, Podcast
-- `written-templates.yaml` - Email, Blog spin-offs, SEO snippets
-- `interactive-templates.yaml` - Quiz, Discussion, Challenge
-- `visual-templates.yaml` - Infographic, Quote graphics
+Templates in `assets/`:
+- `social-templates.yaml` — Twitter, LinkedIn, IG, Threads, Pinterest
+- `video-audio-templates.yaml` — Video, TikTok, Shorts, Audiogram, Podcast
+- `written-templates.yaml` — Email, Blog spin-offs, SEO snippets
+- `interactive-templates.yaml` — Quiz, Discussion, Challenge
+- `visual-templates.yaml` — Infographic, Quote graphics
 
 ### Social Formats (6)
 | # | Format | Best For | Key Rule |

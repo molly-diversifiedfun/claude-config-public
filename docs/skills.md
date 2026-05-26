@@ -1,6 +1,20 @@
 # Skills Catalog
 
-37 custom skills, organized by purpose. Each skill auto-invokes when the user's request matches its trigger phrases — no slash command needed. v1.1 adds a few skills via the catalog system; see `CHANGELOG.md`. The `ai-build-partner` skill is intentionally excluded from this snapshot — it ships separately in the author's [`claude-skills`](https://github.com/molly-diversifiedfun/claude-skills) public repo.
+38 custom skills, organized by purpose. Each skill auto-invokes when the user's request matches its trigger phrases — no slash command needed.
+
+## Catalog system (Phase 7.1 / 7.2 / 7.3 / 7.4)
+
+The growing universe of installed skills (~600 across the ~/.claude/ + plugin trees) is managed by a catalog system:
+
+- **`projects.yaml`** — path → archetype mapping (web-app, telegram-bot, content-pipeline, python-cli, video-pipeline, infra-config, brand-content). Resolution: exact match → longest-prefix → auto-detect → "unknown" fallback.
+- **`skill-archetypes.yaml`** — skill name → archetype tags (`always-on` or one or more archetypes). A skill fires for the active archetype if its tag list contains the archetype OR `always-on`.
+- **`work-type-chains.yaml`** — first-match regex on prompt → ordered chain of work types (build / plan / review / debug / research / write-content / memory / design / infra).
+- **`~/.claude/data/bake-off-stats.tsv`** — rolling tallies (skill_name, appearances, wins, losses, last_run_iso) from `/bake-off` tournaments. Skills with ≥3 appearances AND 0 wins are auto-eliminated from candidate lists.
+- **`scripts/skills-prefilter.sh`** — shared candidate-selection logic. Used by `/skills`, `/bake-off`, and `hooks/inject-skills-for-agent.sh`.
+
+## ai-build-partner
+
+`ai-build-partner` is in the private repo but ships separately in the public [`claude-skills`](https://github.com/<your-github-username>/claude-skills) repo. Not in the public `claude-config-public` mirror.
 
 ## Writing & Voice
 

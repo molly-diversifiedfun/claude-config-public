@@ -4,7 +4,7 @@ description: "Behavioral rules that apply to N command/template files MUST live 
 type: learned-pattern
 applies-to: [bootloader-design, chatgpt-gpt, claude-ai-skills, command-files, ai-skills, prompt-engineering]
 projects: [all]
-severity: blocking
+severity: warning
 phase: [design, build, bootloader-design]
 last-validated: 2026-05-20
 archetypes: [content-pipeline, brand-content, always-on]

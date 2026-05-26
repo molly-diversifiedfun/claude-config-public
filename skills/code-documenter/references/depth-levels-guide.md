@@ -330,7 +330,7 @@ Total: ~11,000 words
 - How tenant isolation works
 - Database sharding explained
 - ADR on authentication approach
-- ADR on multi-te<your-bot> design
+- ADR on multi-tenancy design
 - Performance tuning guide
 - Security threat model
 - Advanced examples (webhooks, batch operations)

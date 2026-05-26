@@ -24,15 +24,15 @@ vercel projects ls
 vercel project inspect <project-name>  # check the `domains` field
 ```
 
-The `domains` field is authoritative. If `<your-product-pipeline>.com` is on project `ship-it-ally` (not `<your-product-pipeline>`), wire analytics to `ship-it-ally`. Brand names lie about which repo does what.
+The `domains` field is authoritative. If `theshipitsystem.com` is on project `ship-it-ally` (not `theshipitsystem`), wire analytics to `ship-it-ally`. Brand names lie about which repo does what.
 
-The 2026-05-16 ship-it-ally / <your-product-pipeline> incident cost ~5 commits to untangle because I assumed instead of verified. (workspace/feedback_verify_domain_repo_mapping.md)
+The 2026-05-16 ship-it-ally / theshipitsystem incident cost ~5 commits to untangle because I assumed instead of verified. (workspace/feedback_verify_domain_repo_mapping.md)
 
 ## PostHog gotchas
 
 - **person_profiles: "identified_only" ordering.** Call `posthog.capture()` BEFORE `posthog.people.set_once()`, AND wrap `set_once` in try/catch. `set_once` silently fails on anonymous users and can kill the chain if not caught. (workspace/feedback_posthog_capture_order_and_lag.md)
 - **Cloud query API lag is 5–10 min on new projects**, not 30s. Trust `{status: "Ok"}` from `/e/` endpoint + wait ≥10 min before declaring capture failure. Bot-filter / gzip / UA debugging are red herrings.
-- **Three PostHog projects in one org.** 415939 = <your-web-app-1>.com, 417699 = <your-app-3>.com, 426369 = <your-product-pipeline>.com. Attribution insights live in the project that owns the destination domain — verify destination via `?ref=` URL targeting before configuring.
+- **Three PostHog projects in one org.** 415939 = unstuckwithmolly.com, 417699 = justshipitapp.com, 426369 = theshipitsystem.com. Attribution insights live in the project that owns the destination domain — verify destination via `?ref=` URL targeting before configuring.
 
 ## SSG and Vercel quirks
 

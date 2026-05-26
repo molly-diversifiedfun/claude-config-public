@@ -175,8 +175,12 @@ enqueue() {
   fi
 
   local subagent; subagent=$(echo "$input" | jq -r '.tool_input.subagent_type // ""' 2>/dev/null)
+
+  # Phase 8.x.4: allowlist = all 12 manifest agents + 7 deprecated aliases
   case "$subagent" in
-    engineer|designer|debugger|content-social|content-longform|content-business|tech-researcher)
+    builder|creator|strategist|researcher|operator|product-lead|designer|debugger|security|reviewer|content-qa|memory-keeper)
+      ;;
+    engineer|content-social|content-longform|content-business|tech-researcher|market-researcher|project-manager)
       ;;
     *)
       log_outcome "enqueue" "$subagent" "skipped:not_allowlisted"
@@ -186,36 +190,31 @@ enqueue() {
 
   local prompt; prompt=$(echo "$input" | jq -r '.tool_input.prompt // ""' 2>/dev/null)
 
-  # Marker detection
-  if ! echo "$prompt" | grep -q '<!-- phase-7-5-injected-skills v1 -->'; then
-    log_outcome "enqueue" "$subagent" "skipped:not_injected"
-    return 0
+  # Phase 8.x.4: detect alias body-injection marker OR fire for manifest agents directly
+  local skills_json="[]"
+  local task="$prompt"
+  if echo "$prompt" | grep -q '<!-- DEPRECATED ALIAS:'; then
+    # Alias dispatch — extract target agent name from the marker
+    local target; target=$(echo "$prompt" | grep -oE "resolved to '[a-z-]+'" | head -1 | sed "s/resolved to '//;s/'//")
+    if [ -n "$target" ]; then
+      skills_json=$(jq -n -c --arg t "$target" '["alias-body-injection:\($t)"]')
+    fi
+    # Strip the injected body to get the original task (after the --- separator)
+    task=$(echo "$prompt" | awk '/^---$/{found++} found>=1 && found<2{next} found>=2{print}' | sed -e '/./,$!d')
+  elif echo "$prompt" | grep -q '<!-- phase-7-5-injected-skills v1 -->'; then
+    # Legacy Phase 7.5 marker (backward compat for old-format dispatches still in context)
+    skills_json=$(echo "$prompt" | awk '
+      /<!-- phase-7-5-injected-skills v1 -->/ { in_block=1; next }
+      /<!-- \/phase-7-5-injected-skills -->/  { in_block=0; next }
+      in_block && /^- / { print }
+    ' | awk -F' — ' '{ sub(/^- /, "", $1); print $1 }' | jq -R -s -c 'split("\n") | map(select(length>0))')
+    task=$(echo "$prompt" | awk '
+      /<!-- phase-7-5-injected-skills v1 -->/ { stripping=1; next }
+      /<!-- \/phase-7-5-injected-skills -->/  { stripping=0; next }
+      !stripping { print }
+    ' | sed -e '/./,$!d')
   fi
-
-  # Extract skill names from inside the marker block (bullet lines starting with "- ")
-  local skills_block
-  skills_block=$(echo "$prompt" | awk '
-    /<!-- phase-7-5-injected-skills v1 -->/ { in_block=1; next }
-    /<!-- \/phase-7-5-injected-skills -->/  { in_block=0; next }
-    in_block && /^- / { print }
-  ')
-
-  # Build JSON array. Field separator is " — " (em-dash). Strip leading "- " prefix.
-  local skills_json
-  skills_json=$(echo "$skills_block" | awk -F' — ' '{ sub(/^- /, "", $1); print $1 }' | jq -R -s -c 'split("\n") | map(select(length>0))')
-
-  if [ -z "$skills_json" ] || [ "$skills_json" = "[]" ]; then
-    log_outcome "enqueue" "$subagent" "skipped:no_skills_parsed"
-    return 0
-  fi
-
-  # Strip the marker block from the prompt → that becomes the "task"
-  local task
-  task=$(echo "$prompt" | awk '
-    /<!-- phase-7-5-injected-skills v1 -->/ { stripping=1; next }
-    /<!-- \/phase-7-5-injected-skills -->/  { stripping=0; next }
-    !stripping { print }
-  ' | sed -e '/./,$!d')
+  # For direct manifest agent dispatches (no marker), task=$prompt and skills_json=[] — both already set
 
   # agent_return: tool_response.content can be string or array of content blocks
   local agent_return
@@ -265,6 +264,29 @@ drain() {
     log_outcome "drain" "-" "skipped:drain_kill"
     return 0
   fi
+
+  # mkdir-based lock: only one drain runs at a time (POSIX-portable, no flock needed)
+  local lockdir="$QUEUE_DIR/.drain-lock"
+  if ! mkdir "$lockdir" 2>/dev/null; then
+    # Check for stale lock (older than 5 min = 300s)
+    local lock_age=0
+    if [ -f "$lockdir/pid" ]; then
+      local lock_ts; lock_ts=$(stat -f %m "$lockdir/pid" 2>/dev/null || echo 0)
+      local now_ts; now_ts=$(date +%s)
+      lock_age=$(( now_ts - lock_ts ))
+    fi
+    if [ "$lock_age" -gt 300 ]; then
+      rm -rf "$lockdir" 2>/dev/null
+      mkdir "$lockdir" 2>/dev/null || { log_outcome "drain" "-" "skipped:lock_contention"; return 0; }
+    else
+      log_outcome "drain" "-" "skipped:already_draining"
+      return 0
+    fi
+  fi
+  echo $$ > "$lockdir/pid" 2>/dev/null
+
+  # Ensure lock is released on exit
+  trap 'rm -rf "$lockdir" 2>/dev/null' RETURN
 
   local count
   count=$(find "$QUEUE_DIR" -maxdepth 1 -name '*.json' -type f 2>/dev/null | wc -l | tr -d ' ')

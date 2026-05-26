@@ -1,4 +1,4 @@
-# ~/.claude/projects.yaml — path → archetype mapping for archetype injection.
+# ~/.claude/projects.yaml — path → archetype mapping for Phase 6.2 archetype injection.
 # Resolution order in archetype-injector.sh:
 #   1. Exact match (after expanding ~)
 #   2. Longest-prefix match (parent dir wins for sub-dirs)
@@ -7,29 +7,43 @@
 #
 # Archetypes: web-app | telegram-bot | content-pipeline | python-cli | video-pipeline | infra-config | brand-content
 # severity: blocking patterns always inject; this manifest gates the rest.
-#
-# ⚠️  REPLACE WITH YOUR OWN PROJECTS. Below are placeholder examples showing the format
-# for each archetype — delete what you don't use, add your real paths.
 
 # Web apps (Vite/React/Vercel/Supabase)
-"~/github/<your-web-app-1>": web-app
-"~/github/<your-web-app-2>": web-app
+"~/github/giftshopper": web-app
+"~/github/joelaumakua": web-app
+"~/github/unstuckwithmolly": web-app
+"~/github/outline-app": web-app
+"~/github/mollyshelestak": web-app
+"~/github/justshipitapp": web-app
+"~/github/conscious-shipping": web-app
+"~/github/theshipitsystem": web-app
+"~/github/warm-lead-prospector": web-app
+"~/github/marketing-os": web-app
+"~/github/meet-quick-dial": web-app
 
 # Telegram bots (Node + n8n + Telegram API)
-"~/github/<your-bot-1>": telegram-bot
+"~/github/nancy": telegram-bot
+"~/github/shipitwithmolly": telegram-bot
 
 # Content pipelines (n8n + Apify + Notion + ReportLab PDFs)
-"~/github/<your-content-pipeline>": content-pipeline
+"~/github/content-system": content-pipeline
+"~/github/ship-it-system": content-pipeline
 
 # Python CLIs
-"~/github/<your-python-cli>": python-cli
+"~/github/conversation-knowledge-extractor": python-cli
+"~/github/sidekick": python-cli
 
 # Video pipelines
-"~/github/<your-video-pipeline>": video-pipeline
+"~/github/video-prompt": video-pipeline
+"~/github/my-video": video-pipeline
 
 # Infra / config
 "~/github/claude-config": infra-config
 "~/github/claude-config-public": infra-config
+"~/github/claude-skills": infra-config
+"~/github/everything-claude-code": infra-config
 
 # Brand content (writing-only dirs + book projects)
-"~/github/<your-brand-content>": brand-content
+"~/github/brainstorms": brand-content
+"~/github/docs": brand-content
+"~/github/the-flamingo-effect": brand-content

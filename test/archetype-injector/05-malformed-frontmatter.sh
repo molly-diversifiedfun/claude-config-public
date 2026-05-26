@@ -14,7 +14,7 @@ name: zz-test-malformed
 this is not valid frontmatter
 EOF
 
-INPUT='{"cwd":"$HOME/github/<your-bot>","prompt":""}'
+INPUT='{"cwd":"$HOME/github/nancy","prompt":""}'
 OUT=$(echo "$INPUT" | "$HOOK")
 RC=$?
 

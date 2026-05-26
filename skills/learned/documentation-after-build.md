@@ -4,7 +4,7 @@ description: Docs ship in the same commit as the feature. DoD enforces this. Thr
 type: learned-pattern
 applies-to: [process, verification, build]
 projects: [all]
-severity: blocking
+severity: warning
 phase: [verify, capture]
 last-validated: 2026-05-12
 archetypes: [always-on]
@@ -42,7 +42,7 @@ Surfaces to sweep:
 - README.md, CLAUDE.md, brand PDFs, sales decks
 - The marketing site for that brand (separate repo)
 
-Single canonical source pattern: keep `product-ladder.yml` (or equivalent) as the one place truth lives, then grep the canonical key from there to verify each surface matches. Stale "Module 0/1/2" counts in welcome.md after restructuring caused 3 different "what's included" answers in the same product week (<your-web-app-1> 2026-05-13/14).
+Single canonical source pattern: keep `product-ladder.yml` (or equivalent) as the one place truth lives, then grep the canonical key from there to verify each surface matches. Stale "Module 0/1/2" counts in welcome.md after restructuring caused 3 different "what's included" answers in the same product week (unstuckwithmolly 2026-05-13/14).
 
 ## Markdown-canonical pipeline for branded PDFs
 

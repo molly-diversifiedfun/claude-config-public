@@ -1,6 +1,6 @@
 #!/bin/bash
 # _slug_to_cwd resolves real paths by forward-built index (slug encoding is lossy:
-# both '/' and '.' map to '-', so reverse-parsing alone fails on `user.name`).
+# both '/' and '.' map to '-', so reverse-parsing alone fails on `molly.shelestak`).
 set -e
 
 python3 <<'PY'
@@ -10,8 +10,8 @@ sr = importlib.util.module_from_spec(spec); import sys as _s; _s.modules["sr"] =
 from pathlib import Path
 
 # Forward encoding must produce no leading double-dash for absolute paths.
-slug = sr._path_to_slug(Path("$HOME/github/<your-bot>"))
-assert slug == "<your-workspace>-<your-bot>", f"encoding wrong: {slug!r}"
+slug = sr._path_to_slug(Path("$HOME/github/nancy"))
+assert slug == "<your-workspace>-nancy", f"encoding wrong: {slug!r}"
 
 # Round-trip: real existing dir's slug must resolve back to itself
 home = Path.home()

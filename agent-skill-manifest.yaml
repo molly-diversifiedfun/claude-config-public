@@ -1,0 +1,877 @@
+# Source of truth for agent + skill + JTBD wiring.
+# DO NOT EDIT generated views (~/.claude/agents/*.md, ~/.claude/docs/skill-directory.md).
+# Run: python3 ~/.claude/scripts/render-manifest.py
+# Validate: bash ~/.claude/scripts/validate-manifest.sh
+
+version: 1
+last_updated: 2026-05-24
+
+roles:
+  - id: builder
+    description: Code, infra, scripts, hooks, tools
+    pipeline_owner: builder
+  - id: creator
+    description: All content production (short-form + longform + business)
+    pipeline_owner: creator
+  - id: strategist
+    description: Marketing strategy + decision pipeline + diagnostic work
+    pipeline_owner: strategist
+  - id: researcher
+    description: Tech + market research + fact verification
+    pipeline_owner: researcher
+  - id: operator
+    description: System care — deploys, plugins, retros, tracking, summaries
+    pipeline_owner: operator
+
+jtbd:
+  - id: ship-a-feature
+    role: builder
+    description: Ship a major feature end-to-end with spec, tests, review, and deploy
+    owner: builder
+    specialists: [product-lead, designer, debugger, reviewer, security, memory-keeper]
+    slash_command: /ship
+    default_scope: M
+    skills:
+      - superpowers:writing-plans
+      - superpowers:test-driven-development
+      - superpowers:subagent-driven-development
+      - superpowers:verification-before-completion
+      - superpowers:requesting-code-review
+      - superpowers:finishing-a-development-branch
+
+  - id: fix-a-bug
+    role: builder
+    description: Fix a bug quickly — no spec, minimal ceremony
+    owner: builder
+    specialists: [reviewer]
+    slash_command: /fix
+    default_scope: S
+    skills:
+      - superpowers:systematic-debugging
+      - superpowers:verification-before-completion
+
+  - id: plan-feature
+    role: builder
+    description: Plan a feature before building — spec, risks, task breakdown
+    owner: builder
+    specialists: [product-lead]
+    slash_command: /plan
+    default_scope: M
+    skills:
+      - superpowers:brainstorming
+      - superpowers:writing-plans
+      - compound-engineering:workflows:plan
+
+  - id: add-config-flag
+    role: builder
+    description: Add or modify a configuration flag, env var, or setting
+    owner: builder
+    specialists: [reviewer]
+    slash_command: /fix
+    default_scope: S
+    skills:
+      - update-config
+      - superpowers:verification-before-completion
+
+  - id: refactor-a-module
+    role: builder
+    description: Refactor an existing module without changing behavior
+    owner: builder
+    specialists: [reviewer]
+    slash_command: /build
+    default_scope: M
+    skills:
+      - superpowers:test-driven-development
+      - superpowers:verification-before-completion
+      - simplify
+
+  - id: add-jtbd-to-manifest
+    role: builder
+    description: Extend the agent-skill manifest with a new JTBD definition
+    owner: builder
+    specialists: [product-lead, memory-keeper, reviewer]
+    slash_command: /ship
+    default_scope: M
+    skills:
+      - superpowers:writing-plans
+      - superpowers:test-driven-development
+      - superpowers:subagent-driven-development
+      - superpowers:verification-before-completion
+
+  - id: add-pipeline-owner
+    role: builder
+    description: Add a new pipeline-owner agent with full role wiring
+    owner: builder
+    specialists: [product-lead, memory-keeper, reviewer, security]
+    slash_command: /ship
+    default_scope: L
+    skills:
+      - superpowers:writing-plans
+      - superpowers:test-driven-development
+      - superpowers:subagent-driven-development
+      - superpowers:verification-before-completion
+      - superpowers:requesting-code-review
+
+  - id: review-pr
+    role: builder
+    description: Review a pull request before merge
+    owner: builder
+    specialists: [reviewer]
+    slash_command: /review
+    default_scope: S
+    skills:
+      - code-review:code-review
+      - pr-review-toolkit:review-pr
+      - differential-review:diff-review
+
+  - id: security-audit
+    role: builder
+    description: Audit code, auth flows, or migrations for security issues
+    owner: builder
+    specialists: [security]
+    default_scope: M
+    skills:
+      - everything-claude-code:security-review
+      - everything-claude-code:security-scan
+      - audit-context-building:audit-context
+
+  - id: make-instagram-carousel
+    role: creator
+    description: Create a multi-slide Instagram carousel with on-brand voice
+    owner: creator
+    specialists: [content-qa]
+    slash_command: /write
+    default_scope: S
+    skills:
+      - brand-voice-router
+      - carousel-writer
+      - hooks
+      - humanize-ai-writing
+      - canva-carousel
+
+  - id: write-blog-post
+    role: creator
+    description: Write a long-form blog post or article
+    owner: creator
+    specialists: [content-qa]
+    slash_command: /write
+    default_scope: M
+    skills:
+      - brand-voice-router
+      - conversion-copywriting
+      - humanize-ai-writing
+      - seo-audit
+
+  - id: write-youtube-script
+    role: creator
+    description: Write a YouTube video script with hook, structure, and retention beats
+    owner: creator
+    specialists: [content-qa]
+    slash_command: /write
+    default_scope: M
+    skills:
+      - youtube-scriptwriting
+      - brand-voice-router
+      - hooks
+      - humanize-ai-writing
+
+  - id: write-conversion-copy
+    role: creator
+    description: Write conversion-optimized copy for a landing page, email, or ad
+    owner: creator
+    specialists: [content-qa]
+    slash_command: /write
+    default_scope: M
+    skills:
+      - conversion-copywriting
+      - brand-voice-router
+      - humanize-ai-writing
+      - marketing-psychology
+
+  - id: write-resume
+    role: creator
+    description: Build or tailor a resume from real evidence
+    owner: creator
+    specialists: [content-qa]
+    slash_command: /write
+    default_scope: S
+    skills:
+      - resume-rebuilder
+      - humanize-ai-writing
+
+  - id: write-flamingo-chapter
+    role: creator
+    description: Write a Flamingo Effect book chapter in the master-doc editorial style
+    owner: creator
+    specialists: [content-qa]
+    slash_command: /write
+    default_scope: L
+    skills:
+      - flamingo-doc-style
+      - brand-voice-router
+      - humanize-ai-writing
+      - voice-extractor
+
+  - id: atomize-content
+    role: creator
+    description: Repurpose one pillar piece into platform-ready content derivatives
+    owner: creator
+    specialists: [content-qa]
+    slash_command: /write
+    default_scope: S
+    skills:
+      - brand-voice-router
+      - content-atomizer
+      - hooks
+      - humanize-ai-writing
+
+  - id: make-decision
+    role: strategist
+    description: Make a decision between 2-4 options with structured reasoning
+    owner: strategist
+    specialists: []
+    default_scope: S
+    skills:
+      - decision-maker
+      - devils-advocate
+      - mental-models
+
+  - id: stress-test-idea
+    role: strategist
+    description: Stress-test an idea, plan, or decision through adversarial critique
+    owner: strategist
+    specialists: []
+    default_scope: S
+    skills:
+      - devils-advocate
+      - mental-models
+      - self-interview
+
+  - id: plan-content-strategy
+    role: strategist
+    description: Plan a content strategy with pillars, calendar, and topic coverage
+    owner: strategist
+    specialists: []
+    default_scope: M
+    skills:
+      - content-strategy
+      - content-calendar
+      - keyword-research
+      - marketing-psychology
+
+  - id: audit-followability
+    role: strategist
+    description: Audit a product, onboarding, or system for followability gaps
+    owner: strategist
+    specialists: []
+    default_scope: M
+    skills:
+      - followability-audit
+      - mental-models
+      - devils-advocate
+
+  - id: diagnose-stuck-project
+    role: strategist
+    description: Diagnose why a side project is stuck and unstick it
+    owner: strategist
+    specialists: []
+    slash_command: /unstuck
+    default_scope: M
+    skills:
+      - ai-build-partner
+      - unstuck
+      - mental-models
+      - decision-maker
+
+  - id: research-library
+    role: researcher
+    description: Research a library, API, framework, or SDK for current usage
+    owner: researcher
+    specialists: []
+    slash_command: /research
+    default_scope: S
+    skills:
+      - firecrawl
+      - plugin_compound-engineering_context7:query-docs
+
+  - id: research-market
+    role: researcher
+    description: Research a market, competitor, prospect, or fact for verification
+    owner: researcher
+    specialists: []
+    slash_command: /research
+    default_scope: S
+    skills:
+      - firecrawl
+      - keyword-research
+
+  - id: deploy-project
+    role: operator
+    description: Deploy a project to its target environment with smoke verification
+    owner: operator
+    specialists: [memory-keeper]
+    slash_command: /deploy
+    default_scope: M
+    skills:
+      - deploy
+      - use-railway
+      - ship-preflight
+
+  - id: audit-plugins
+    role: operator
+    description: Audit installed plugins for upstream drift and apply updates
+    owner: operator
+    specialists: []
+    slash_command: /update-plugins
+    default_scope: S
+    skills:
+      - update-plugins
+
+  - id: consolidate-skills
+    role: operator
+    description: Scan installed skills for consolidation candidates
+    owner: operator
+    specialists: []
+    slash_command: /consolidate-skills
+    default_scope: S
+    skills:
+      - consolidate-skills
+      - merge-skills
+
+  - id: sync-notion
+    role: operator
+    description: Sync project docs and session progress to Notion wiki
+    owner: operator
+    specialists: []
+    slash_command: /sync-notion
+    default_scope: S
+    skills:
+      - sync-notion
+
+  - id: session-handoff
+    role: operator
+    description: Save current session state for continuity across sessions
+    owner: operator
+    specialists: []
+    slash_command: /handoff
+    default_scope: S
+    skills:
+      - handoff
+      - session-handoff
+
+  - id: session-retro
+    role: operator
+    description: Run a retrospective over recent sessions to surface patterns
+    owner: operator
+    specialists: [memory-keeper]
+    slash_command: /system-retro
+    default_scope: M
+    skills:
+      - system-retro
+      - learn
+      - update-memory
+
+agents:
+  builder:
+    kind: pipeline_owner
+    model: sonnet
+    description: Pipeline owner for code, infra, scripts, hooks, and tools — owns /plan /build /ship /fix
+    owns_slash_commands: [/plan, /build, /ship, /fix]
+    owns_jtbd:
+      - ship-a-feature
+      - fix-a-bug
+      - plan-feature
+      - add-config-flag
+      - refactor-a-module
+      - add-jtbd-to-manifest
+      - add-pipeline-owner
+      - review-pr
+      - security-audit
+    skills:
+      primary:
+        - superpowers:test-driven-development
+        - superpowers:subagent-driven-development
+        - superpowers:verification-before-completion
+        - superpowers:writing-plans
+        - superpowers:brainstorming
+        - superpowers:systematic-debugging
+      chain:
+        - superpowers:requesting-code-review
+        - superpowers:finishing-a-development-branch
+        - superpowers:using-git-worktrees
+        - compound-engineering:workflows:plan
+        - compound-engineering:workflows:work
+        - compound-engineering:workflows:review
+        - simplify
+        - update-config
+    tools:
+      built_in:
+        - Read
+        - Write
+        - Edit
+        - Bash
+        - Glob
+        - Grep
+        - TodoWrite
+        - AskUserQuestion
+        - Task
+        - WebSearch
+        - WebFetch
+      mcp:
+        - compound-engineering:context7
+        - mempalace
+        - supabase
+        - firecrawl
+    can_invoke_specialists:
+      - product-lead
+      - designer
+      - debugger
+      - reviewer
+      - security
+      - memory-keeper
+    notes: |
+      Primary engineering pipeline owner. Owns the /ship pipeline including Stage 1
+      (memory pre-flight via memory-keeper) and Stage 11 (capture via memory-keeper).
+      Delegates plan-writing to product-lead on L/XL scopes, UI work to designer,
+      nasty bugs to debugger, all pre-merge review to reviewer, and auth/migration
+      review to security. Must include AskUserQuestion to clarify scope at intake
+      rather than guessing.
+
+  creator:
+    kind: pipeline_owner
+    model: sonnet
+    description: Pipeline owner for all content production — short-form social, longform, and business deliverables
+    owns_slash_commands: [/write]
+    owns_jtbd:
+      - make-instagram-carousel
+      - write-blog-post
+      - write-youtube-script
+      - write-conversion-copy
+      - write-resume
+      - write-flamingo-chapter
+      - atomize-content
+    skills:
+      primary:
+        - brand-voice-router
+        - content-atomizer
+        - conversion-copywriting
+        - humanize-ai-writing
+      chain:
+        - hooks
+        - carousel-writer
+        - content-strategy
+        - content-calendar
+        - youtube-scriptwriting
+        - flamingo-doc-style
+        - resume-rebuilder
+        - voice-extractor
+        - canva-carousel
+        - seo-audit
+        - marketing-psychology
+    tools:
+      built_in:
+        - Read
+        - Write
+        - Edit
+        - Bash
+        - Glob
+        - Grep
+        - TodoWrite
+        - AskUserQuestion
+        - Task
+        - WebSearch
+        - WebFetch
+      mcp:
+        - canva
+        - mempalace
+        - firecrawl
+    can_invoke_specialists:
+      - content-qa
+      - designer
+    notes: |
+      Owns the full /write pipeline. Always routes brand voice via brand-voice-router
+      first, then humanize-ai-writing as the last step before content-qa. canva MCP
+      is required for carousel template injection per gap-fix.
+
+  strategist:
+    kind: pipeline_owner
+    model: sonnet
+    description: Pipeline owner for marketing strategy, decision-making, diagnostics, and stuck-project unsticking
+    owns_slash_commands: []
+    owns_jtbd:
+      - make-decision
+      - stress-test-idea
+      - plan-content-strategy
+      - audit-followability
+      - diagnose-stuck-project
+    skills:
+      primary:
+        - content-strategy
+        - content-calendar
+        - marketing-psychology
+        - decision-maker
+        - devils-advocate
+        - mental-models
+        - seo-audit
+        - keyword-research
+        - brainstorm
+        - ai-build-partner
+        - followability-audit
+      chain:
+        - self-interview
+        - ask-me-the-questions
+        - unstuck
+        - content-gap-analysis
+        - competitor-analysis
+    tools:
+      built_in:
+        - Read
+        - Write
+        - Edit
+        - Bash
+        - Glob
+        - Grep
+        - TodoWrite
+        - AskUserQuestion
+        - Task
+        - WebSearch
+        - WebFetch
+      mcp:
+        - mempalace
+        - firecrawl
+        - compound-engineering:context7
+    can_invoke_specialists: []
+    notes: |
+      No utility specialists — strategist runs its skill chains in-process.
+      AskUserQuestion is critical for the decision-maker, followability-audit, and
+      ai-build-partner flows which require structured user input to proceed.
+
+  researcher:
+    kind: pipeline_owner
+    model: sonnet
+    description: Pipeline owner for tech research, market research, and fact verification
+    owns_slash_commands: [/research]
+    owns_jtbd:
+      - research-library
+      - research-market
+    skills:
+      primary:
+        - firecrawl
+        - compound-engineering:context7
+      chain:
+        - keyword-research
+        - plugin_compound-engineering_context7:query-docs
+        - plugin_context7_context7:query-docs
+    tools:
+      built_in:
+        - Read
+        - Write
+        - Edit
+        - Bash
+        - Glob
+        - Grep
+        - TodoWrite
+        - AskUserQuestion
+        - Task
+        - WebSearch
+        - WebFetch
+      mcp:
+        - firecrawl
+        - compound-engineering:context7
+        - notion
+        - mempalace
+    can_invoke_specialists: []
+    notes: |
+      Read-mostly pipeline. Prefers context7 for library docs, firecrawl for the
+      open web, notion for stored research, and mempalace for prior findings.
+
+  operator:
+    kind: pipeline_owner
+    model: sonnet
+    description: Pipeline owner for system care — deploys, plugin audits, skill consolidation, syncs, handoffs, and retros
+    owns_slash_commands: [/deploy, /update-plugins, /consolidate-skills, /sync-notion, /handoff, /system-retro]
+    owns_jtbd:
+      - deploy-project
+      - audit-plugins
+      - consolidate-skills
+      - sync-notion
+      - session-handoff
+      - session-retro
+    skills:
+      primary:
+        - handoff
+        - code-documenter
+      chain:
+        - deploy
+        - use-railway
+        - ship-preflight
+        - update-plugins
+        - consolidate-skills
+        - merge-skills
+        - sync-notion
+        - session-handoff
+        - system-retro
+        - learn
+        - update-memory
+    tools:
+      built_in:
+        - Read
+        - Write
+        - Edit
+        - Bash
+        - Glob
+        - Grep
+        - TodoWrite
+        - AskUserQuestion
+        - Task
+        - WebSearch
+        - WebFetch
+      mcp:
+        - mempalace
+        - notion
+    can_invoke_specialists:
+      - memory-keeper
+    notes: |
+      Owns infrastructure-flavored slash commands. Delegates memory ops to
+      memory-keeper. Read/Write/Edit are needed for HANDOFF.md, TASKS.md, and
+      ADR creation during handoffs and retros. Deploy-SHA verification uses
+      Vercel/Railway cloud-MCP tools (claude.ai integrations, inherited from
+      session context — not locally configured, so not listed under mcp:).
+
+  product-lead:
+    kind: utility_specialist
+    model: opus
+    description: Senior PM/Tech Lead — writes specs, plans, and brainstorms for L/XL feature work
+    owns_slash_commands: []
+    owns_jtbd: []
+    skills:
+      primary:
+        - superpowers:brainstorming
+        - superpowers:writing-plans
+      chain:
+        - ask-questions-if-underspecified:ask-questions-if-underspecified
+        - compound-engineering:workflows:brainstorm
+        - compound-engineering:workflows:plan
+        - compound-engineering:deepen-plan
+        - brainstorm
+        - mental-models
+        - devils-advocate
+        - decision-maker
+        - self-interview
+        - ask-me-the-questions
+    tools:
+      built_in:
+        - Read
+        - Write
+        - Edit
+        - Bash
+        - Glob
+        - Grep
+        - TodoWrite
+        - AskUserQuestion
+        - Task
+        - WebSearch
+        - WebFetch
+      mcp:
+        - mempalace
+        - notion
+        - compound-engineering:context7
+    can_invoke_specialists: []
+    notes: |
+      Invoked by builder for L/XL spec writing and brainstorming. Always queries
+      mempalace for prior plans + ADRs before drafting. AskUserQuestion mandatory
+      for scope intake.
+
+  designer:
+    kind: utility_specialist
+    model: sonnet
+    description: UI/UX designer — components, layouts, accessibility, visual QA via Playwright
+    owns_slash_commands: []
+    owns_jtbd: []
+    skills:
+      primary: []
+      chain:
+        - frontend-design:frontend-design
+        - ui-ux-pro-max:ui-ux-pro-max
+        - nano-banana
+        - compound-engineering:frontend-design
+    tools:
+      built_in:
+        - Read
+        - Write
+        - Edit
+        - Bash
+        - Glob
+        - Grep
+        - TodoWrite
+        - AskUserQuestion
+        - Task
+        - WebSearch
+        - WebFetch
+      mcp:
+        - playwright
+        - canva
+        - mempalace
+    can_invoke_specialists: []
+    notes: |
+      playwright MCP is required for visual QA — the agent description claims
+      browser-based design verification, so the server grant is non-negotiable per
+      gap analysis. nano-banana skill handles brand-locked illustrations.
+
+  debugger:
+    kind: utility_specialist
+    model: opus
+    description: Bug investigation — complex bugs, repros, root cause analysis
+    owns_slash_commands: []
+    owns_jtbd: []
+    skills:
+      primary:
+        - superpowers:systematic-debugging
+        - superpowers:verification-before-completion
+      chain:
+        - everything-claude-code:go-build
+        - simplify
+    tools:
+      built_in:
+        - Read
+        - Write
+        - Edit
+        - Bash
+        - Glob
+        - Grep
+        - TodoWrite
+        - AskUserQuestion
+        - Task
+        - WebSearch
+        - WebFetch
+      mcp:
+        - mempalace
+        - supabase
+    can_invoke_specialists: []
+    notes: |
+      Invoked on nasty bugs that systematic-debugging skill chains. Always queries
+      mempalace for prior occurrences before proposing fixes.
+
+  security:
+    kind: utility_specialist
+    model: opus
+    description: Security auditor — read-only review of auth, migrations, secrets, and injection vectors
+    owns_slash_commands: []
+    owns_jtbd: []
+    skills:
+      primary: []
+      chain:
+        - everything-claude-code:security-review
+        - everything-claude-code:security-scan
+        - audit-context-building:audit-context
+        - audit-context-building:audit-context-building
+        - differential-review:diff-review
+        - differential-review:differential-review
+    tools:
+      built_in:
+        - Read
+        - Bash
+        - Glob
+        - Grep
+        - TodoWrite
+        - AskUserQuestion
+        - Task
+        - WebSearch
+        - WebFetch
+      mcp:
+        - supabase
+        - mempalace
+    can_invoke_specialists: []
+    notes: |
+      Read-only — Write and Edit deliberately omitted. Auto-spawns on
+      auth/migration changes per /ship pipeline. Reports findings as a markdown
+      review; builder applies fixes.
+
+  reviewer:
+    kind: utility_specialist
+    model: sonnet
+    description: Code reviewer — pre-merge review, read-only, catches architectural issues
+    owns_slash_commands: []
+    owns_jtbd: []
+    skills:
+      primary: []
+      chain:
+        - code-review:code-review
+        - pr-review-toolkit:review-pr
+        - differential-review:diff-review
+        - compound-engineering:workflows:review
+        - everything-claude-code:python-review
+        - everything-claude-code:go-review
+        - simplify
+    tools:
+      built_in:
+        - Read
+        - Bash
+        - Glob
+        - Grep
+        - TodoWrite
+        - AskUserQuestion
+        - Task
+        - WebSearch
+        - WebFetch
+      mcp:
+        - mempalace
+        - supabase
+    can_invoke_specialists: []
+    notes: |
+      Read-only — Write and Edit deliberately omitted. Always runs BEFORE final
+      tests are written (catches architectural issues that tests would lock in).
+
+  content-qa:
+    kind: utility_specialist
+    model: haiku
+    description: Content QA — read-only checklist against learned/qa-rules.md
+    owns_slash_commands: []
+    owns_jtbd: []
+    skills:
+      primary: []
+      chain: []
+    tools:
+      built_in:
+        - Read
+        - Glob
+        - Grep
+        - TodoWrite
+      mcp: []
+    can_invoke_specialists: []
+    notes: |
+      Haiku narrow-scope — deliberately LACKS AskUserQuestion, Write, Edit, Bash.
+      Runs a deterministic checklist (no clarifying questions). Auto-spawned by
+      creator on every content write. Reports PM-jargon, 47, banned vocab, wrong
+      handle, and pillar/label mismatches.
+
+  memory-keeper:
+    kind: utility_specialist
+    model: haiku
+    description: Memory operations — /ship Stage 1 pre-flight pattern load + Stage 11 capture
+    owns_slash_commands: []
+    owns_jtbd: []
+    skills:
+      primary: []
+      chain:
+        - update-memory
+        - learn
+        - handoff
+    tools:
+      built_in:
+        - Read
+        - Write
+        - Edit
+        - Glob
+        - Grep
+        - TodoWrite
+        - Task
+      mcp:
+        - mempalace
+        - supabase
+    can_invoke_specialists: []
+    notes: |
+      Haiku narrow-scope — deliberately LACKS AskUserQuestion and Bash. Edit
+      added (Phase 8.x.4) for surgical MEMORY.md index appends. Memory ops are
+      deterministic (load tagged patterns at pre-flight; write feedback files at
+      post-flight). Owned by builder (/ship) and operator (/system-retro).

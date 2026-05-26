@@ -4,7 +4,7 @@ description: "Any `<required_reading>` block in a Claude.ai skill leaks tool-cal
 type: learned-pattern
 applies-to: [all-claude-ai-skills, voice, narration, skill-architecture]
 projects: [all]
-severity: blocking
+severity: warning
 phase: [build, voice, deploy]
 last-validated: 2026-05-19
 archetypes: [always-on]
@@ -24,7 +24,7 @@ In the 2026-05-19 voice-tighten ship, even after adding the no-narrate reflex ch
 
 When building or auditing any Claude.ai skill:
 
-1. `grep -r "<required_reading>" claude-skills/ <your-product-pipeline>/skills/` should return **zero hits**.
+1. `grep -r "<required_reading>" claude-skills/ ship-it-system/skills/` should return **zero hits**.
 2. If a command needs to reference required context, put it as plain instruction prose in SKILL.md or in the command's body — not in a structured block Claude.ai's UI knows how to render.
 3. Add this to the no-narrate enforcement checklist in `00-master-system-prompt.md`.
 

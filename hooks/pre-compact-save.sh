@@ -25,12 +25,11 @@ if [ -f "$PROJECT_DIR/TASKS.md" ]; then
   cp "$PROJECT_DIR/TASKS.md" "$BACKUP_DIR/${PROJECT_NAME}-TASKS-precompact-$(date +%Y%m%d-%H%M%S).md" 2>/dev/null || true
 fi
 
-# If in a git repo, commit any uncommitted changes
+# If in a git repo with uncommitted changes, stash (not commit — git add -A
+# can stage .env, secrets, or large binaries without user awareness)
 if [ -d "$PROJECT_DIR/.git" ]; then
   cd "$PROJECT_DIR" || exit 0
   if ! git diff --quiet 2>/dev/null || ! git diff --cached --quiet 2>/dev/null; then
-    git add -A 2>/dev/null
-    git commit -m "[pre-compact] Auto-save before context compaction - $TIMESTAMP" 2>/dev/null || \
     git stash push -m "pre-compact auto-stash $TIMESTAMP" 2>/dev/null || true
   fi
 fi

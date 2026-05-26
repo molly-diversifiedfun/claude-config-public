@@ -131,6 +131,11 @@
             "type": "command",
             "command": "~/.claude/hooks/session-retrospective.sh",
             "statusMessage": "Running session retrospective..."
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/stop-check-manifest-drift.sh",
+            "statusMessage": "Checking manifest drift..."
           }
         ]
       }
@@ -223,6 +228,11 @@
             "type": "command",
             "command": "~/.claude/hooks/caption-guard.sh",
             "statusMessage": "Checking caption generation uses prompt..."
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/pre-commit-validate-manifest.sh",
+            "statusMessage": "Validating agent-skill manifest..."
           }
         ]
       },

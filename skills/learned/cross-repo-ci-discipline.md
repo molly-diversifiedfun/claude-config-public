@@ -14,9 +14,9 @@ archetypes: [infra-config, multi-product, build-pipeline]
 # Cross-Repo CI Lives With Canonical Source
 
 **Origin:** 2026-05-23 Plan A + Plan B for the Ship It System cluster. Three canonical-source moves happened in one session:
-- Plan A: <your-product-pipeline> → claude-skills (AI Build Partner kit-files moved out of <your-product-pipeline>)
-- Plan B: <your-marketing-stack> → <your-product-pipeline>/extensions/ (Marketing OS folded into <your-product-pipeline> from standalone repo)
-- (Implicit Plan C, did not happen) <your-product-pipeline>/extensions/ → claude-skills (rejected; kept intra-repo)
+- Plan A: ship-it-system → claude-skills (AI Build Partner kit-files moved out of ship-it-system)
+- Plan B: marketing-os → ship-it-system/extensions/ (Marketing OS folded into ship-it-system from standalone repo)
+- (Implicit Plan C, did not happen) ship-it-system/extensions/ → claude-skills (rejected; kept intra-repo)
 
 Each move forced a CI decision: where does the propagation workflow live?
 
@@ -26,13 +26,13 @@ When content moves from repo A → repo B as the new canonical source:
 
 1. **Inventory every cron/path-triggered workflow that watches the OLD source path.** Each one needs an explicit fate.
 2. **Default to: delete from A, create fresh in B.** The new workflows fire on push to B's canonical paths, check out consumer repos via PAT, run build/sync scripts (also moved to B), open PRs to consumers.
-3. **If source-and-consumer end up in the SAME repo** (intra-repo regen, like Plan B's <your-marketing-stack> → <your-product-pipeline>/extensions/ → <your-product-pipeline>/skills/<your-marketing-stack>-skill/): no GitHub Actions needed for propagation. Manual local scripts are sufficient; any contributor or hire can run them after edits without secret-config friction.
+3. **If source-and-consumer end up in the SAME repo** (intra-repo regen, like Plan B's marketing-os → ship-it-system/extensions/ → ship-it-system/skills/marketing-os-skill/): no GitHub Actions needed for propagation. Manual local scripts are sufficient; any contributor or hire can run them after edits without secret-config friction.
 
 ## Why path-triggers in the old repo are the silent-failure mode
 
 A workflow with `on: push: paths: ['ai-build-partner-kit/**']` watching a path that no longer exists in the repo:
 - Never fires automatically (no commits ever touch that path)
-- `workflow_dispatch` manual fallback fails at runtime: `cp <your-product-pipeline>/ai-build-partner-kit/00-*.md ...` exits non-zero because the source files are gone
+- `workflow_dispatch` manual fallback fails at runtime: `cp ship-it-system/ai-build-partner-kit/00-*.md ...` exits non-zero because the source files are gone
 - No GitHub UI signal that the workflow is broken — just an empty Actions runs list
 
 This is strictly worse than deleting the workflow. A deleted workflow is visible in git history; an inert workflow looks "still configured" but produces nothing. Future contributors see the YAML and assume sync is automatic.

@@ -188,11 +188,11 @@ Sourced from `feedback_phase_7_7a_2_llm_judge_dogfood_outcome.md` (the `--bare` 
 
 ## Claude Code transcript slug lossiness — never reverse-parse
 
-Claude Code stores session transcripts at `~/.claude/projects/<slug>/<session-id>.jsonl` where `<slug>` is the cwd path with BOTH `/` AND `.` encoded as `-`. This makes reverse-parsing fundamentally lossy: `user.name` and `user-name` are indistinguishable after encoding (both become `user-name`), so `$HOME/github/<your-bot>` → `<your-workspace>-<your-bot>` could plausibly reverse to a non-existent `/Users/user-name/github/<your-bot>` path.
+Claude Code stores session transcripts at `~/.claude/projects/<slug>/<session-id>.jsonl` where `<slug>` is the cwd path with BOTH `/` AND `.` encoded as `-`. This makes reverse-parsing fundamentally lossy: `molly.shelestak` and `molly-shelestak` are indistinguishable after encoding (both become `molly-shelestak`), so `$HOME/github/nancy` → `<your-workspace>-nancy` could plausibly reverse to a non-existent `/Users/molly-shelestak/github/nancy` path.
 
 **The rule:** when you need to map slugs back to real paths (for cross-session analysis, `git log` joins, archetype detection, etc.), build a FORWARD index — walk likely cwd roots (`~`, `~/github`, `~/Desktop`, `~/Downloads`, `~/.claude`, `/private/tmp`, `/tmp`) two-deep, compute each real dir's slug, build `dict[slug, str(real_path)]`. Cache the index per analyzer run.
 
-**Why this matters:** `/system-retro` (Phase 7.7c, 2026-05-23) initially used a reverse-parser that produced phantom paths like `/Users/user-name/github/...` that didn't exist on disk. Every `git log` join failed silently — the "commits this session shipped" column was empty across every row. Symptom looked like "we don't track commits during sessions"; root cause was lossy slug encoding.
+**Why this matters:** `/system-retro` (Phase 7.7c, 2026-05-23) initially used a reverse-parser that produced phantom paths like `/Users/molly-shelestak/github/...` that didn't exist on disk. Every `git log` join failed silently — the "commits this session shipped" column was empty across every row. Symptom looked like "we don't track commits during sessions"; root cause was lossy slug encoding.
 
 **Test pattern:** for any new analyzer that consumes transcript slugs, add a unit test that round-trips a real cwd → slug → resolved path → confirms exists. Regression test pattern at `~/.claude/test/system-retro/08-cwd-slug-roundtrip.sh`.
 

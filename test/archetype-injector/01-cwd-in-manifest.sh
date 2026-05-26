@@ -4,7 +4,7 @@ set -euo pipefail
 
 HOOK="$HOME/.claude/hooks/archetype-injector.sh"
 
-INPUT='{"cwd":"$HOME/github/<your-bot>","prompt":"hello"}'
+INPUT='{"cwd":"$HOME/github/nancy","prompt":"hello"}'
 OUT=$(echo "$INPUT" | "$HOOK" 2>&1)
 RC=$?
 

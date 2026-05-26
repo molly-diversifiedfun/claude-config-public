@@ -13,7 +13,7 @@ allowed-tools: Read Write Edit Grep Glob
 ---
 
 <!-- Auto-inject brand config if available -->
-Brand config: !`cat <your-first-brand-slug>/brand-config.json 2>/dev/null || echo "No brand config found — using defaults"`
+Brand config: !`cat unstuck/brand-config.json 2>/dev/null || echo "No brand config found — using defaults"`
 
 # Carousel Writer — Structured Content for Canva MCP
 
@@ -23,7 +23,7 @@ Generate 7-10 slide carousel content as structured JSON, ready for Canva templat
 
 **Step 1: Load brand context.**
 
-1. **Voice DNA**: `<your-content-pipeline>/{brand}/{brand}-voice-dna.md`
+1. **Voice DNA**: `content-system/{brand}/{brand}-voice-dna.md`
 2. **Brand rules**: `.claude/rules/brands/{brand}.md`
 3. **Canva template spec** (from implementation spec):
    - Slide 1 (Hook): Large headline, brand accent, cream background
@@ -77,7 +77,7 @@ Before writing ANY slides, determine the pillar and select the matching framewor
 
 ## Step 0.5: Select Visual Template (MANDATORY)
 
-After selecting the framework, choose a visual template. Read `<your-content-pipeline>/<your-first-brand-slug>/visuals/templates/design-engine.md` for full design principles. Read `<your-content-pipeline>/<your-first-brand-slug>/visuals/templates/carousel-formats.md` for all 16 format specs.
+After selecting the framework, choose a visual template. Read `content-system/unstuck/visuals/templates/design-engine.md` for full design principles. Read `content-system/unstuck/visuals/templates/carousel-formats.md` for all 16 format specs.
 
 **Template selection by content type:**
 
@@ -102,7 +102,7 @@ Add a `"visual_template"` field to the JSON output:
 "visual_template": "13-secret-codes"
 ```
 
-Each template has HTML reference files in `<your-first-brand-slug>/visuals/previews/{template}/` — use these as the visual style guide when producing slide HTML.
+Each template has HTML reference files in `unstuck/visuals/previews/{template}/` — use these as the visual style guide when producing slide HTML.
 
 ## Step 0.75: Target Archetype + Proof Source (MANDATORY)
 
@@ -156,7 +156,7 @@ The narrative arc adapts based on framework selection above, but follows this ge
 
 ```json
 {
-  "brand": "<your-first-brand-slug>",
+  "brand": "unstuck",
   "topic": "Your side project isn't stalled — it's under-built",
   "pillar": "mirror",
   "framework": "PAS",
@@ -223,7 +223,7 @@ The narrative arc adapts based on framework selection above, but follows this ge
     "body": "Same brain that manages a multi-million dollar roadmap can't get a landing page live.\n\nThat's not a character flaw. That's a systems failure.\n\nYou don't need more motivation. You need the same infrastructure that makes you lethal at work — applied to your thing.",
     "cta": "Send this to the friend who's been 'almost ready' for 6 months.",
     "seo_keywords": ["side project stuck", "side project motivation", "build in public"],
-    "hashtags": ["#sideproject", "#buildinpublic", "#<your-web-app-1>", "#buildyourthing"]
+    "hashtags": ["#sideproject", "#buildinpublic", "#unstuckwithmolly", "#buildyourthing"]
   }
 }
 ```
@@ -317,7 +317,7 @@ Before delivering, run this sweep on ALL output text:
 2. **Tool/reference diversity:** If you referenced the same tool (e.g., Notion) more than once, swap alternates: Figma, Vercel, Stripe, VS Code, Cursor, Linear, Railway, GitHub, Airtable.
 3. **Parallel structure:** Break any run of 3+ items with identical sentence structure. Vary length, syntax, and rhythm.
 4. **Voice DNA re-check:** Re-read the brand's banned vocabulary list. Flag any that slipped in.
-5. **Handle check:** Use the correct Instagram handle from brand rules (e.g., @your-handle, NOT @your-wrong-handle-2).
+5. **Handle check:** Use the correct Instagram handle from brand rules (e.g., @your-handle, NOT @welcome.to.mollywood).
 
 This sweep is the last step before delivery. Do not skip it.
 
@@ -339,15 +339,15 @@ The visual-producer agent reads this JSON and uses `perform-editing-operations` 
 ## Input
 
 1. **Topic or outline** — from `/repurpose`, `/content-matrix`, or raw topic
-2. **Brand** — which brand (default: <your-first-brand-slug>)
+2. **Brand** — which brand (default: unstuck)
 3. **Slide count** — 7-10 (default: 10)
 4. **CTA** (optional) — specific call to action (default: brand's primary CTA)
 
 ## Output Location
 
-Save to: `<your-content-pipeline>/{brand}/content/YYYY-MM/carousel-[slug].json`
+Save to: `content-system/{brand}/content/YYYY-MM/carousel-[slug].json`
 
-Also save the markdown preview alongside: `<your-content-pipeline>/{brand}/content/YYYY-MM/carousel-[slug].md`
+Also save the markdown preview alongside: `content-system/{brand}/content/YYYY-MM/carousel-[slug].md`
 
 ## Integration
 

@@ -4,7 +4,7 @@ description: Senior tech audience clocks AI content instantly. Three categories 
 type: learned-pattern
 applies-to: [content, verification]
 projects: [all]
-severity: blocking
+severity: warning
 phase: [content, verify, capture]
 last-validated: 2026-05-12
 archetypes: [brand-content, always-on]

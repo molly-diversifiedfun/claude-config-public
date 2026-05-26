@@ -22,6 +22,14 @@ LOG_DIR="$HOME/.claude/logs"
 LOG_FILE="$LOG_DIR/mempalace-hooks.log"
 mkdir -p "$LOG_DIR"
 
+# Rotate log if >5MB (same pattern as observe-learning.sh)
+if [ -f "$LOG_FILE" ]; then
+  LOG_SIZE=$(stat -f '%z' "$LOG_FILE" 2>/dev/null || stat -c '%s' "$LOG_FILE" 2>/dev/null || echo "0")
+  if [ "$LOG_SIZE" -gt 5242880 ]; then
+    tail -5000 "$LOG_FILE" > "$LOG_FILE.tmp" 2>/dev/null && mv "$LOG_FILE.tmp" "$LOG_FILE" 2>/dev/null
+  fi
+fi
+
 # Parse --hook=NAME
 HOOK_NAME=""
 for arg in "$@"; do

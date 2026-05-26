@@ -220,7 +220,7 @@ cat <<EOF
     - For <your-agent-project> listener install: see ~/github/<your-agent-project>/HANDOFF.md
       under "Phase B" once that work begins
 
-  To pull updates from the primary Mac later:
+  To pull updates from your primary machine later:
     cd $REPO_DIR
     git pull
     bin/install.sh

@@ -76,6 +76,6 @@ Then hand off to /build or /ship for implementation.
 
 ```
 /plan creative team agent system          → all 3 phases (new system)
-/plan add email sequences to <your-first-brand>      → Phase 1 + 2 + 3 (new capability)
+/plan add email sequences to Unstuck      → Phase 1 + 2 + 3 (new capability)
 /plan fix the intake form validation      → skip to /build (small fix, no brief needed)
 ```

@@ -2,24 +2,25 @@
 
 ## Product Team — ALWAYS Delegate
 
-You have 14 specialized agents. **USE THEM.** Don't do everything yourself.
+Agents are defined in `~/.claude/agent-skill-manifest.yaml` (single source of truth, Phase 8.x). Generated agent.md files live in `~/.claude/agents/` (regenerated, do not hand-edit). Human-readable directory at `~/.claude/docs/skill-directory.md`.
 
-| Agent | Model | Role | Key Skills/Plugins |
-|-------|-------|------|--------------------|
-| product-lead | opus | PM/Tech Lead | ask-questions-if-underspecified, compound-engineering, brainstorm, mental-models, devils-advocate |
-| engineer | sonnet | Implementation | compound-engineering, superpowers (TDD/debug/verify), everything-claude-code (postgres/api/security), firecrawl, context7 |
-| reviewer | sonnet | Code Review (read-only) | code-review, pr-review-toolkit, differential-review, code-simplifier |
-| designer | sonnet | UI/UX Design | frontend-design, ui-ux-pro-max, nano-banana, playwright |
-| debugger | opus | Bug Investigation | superpowers (systematic-debugging, verification) |
-| tech-researcher | sonnet | API/library/doc research | firecrawl, context7, WebSearch |
-| security | opus | Security Audit (read-only) | audit-context-building, everything-claude-code (security-review/scan) |
-| project-manager | haiku | Tracking/Summaries (read-only) | handoff, code-documenter |
-| memory-keeper | haiku | Owns /ship Stage 1 (pre-flight pattern load) + Stage 11 (capture) | (frontmatter-tagged memory glob; see ship pipeline v2) |
-| content-social | sonnet | Short-form social (IG/LI/TT/Reels) | brand-voice-router, humanize-ai-writing, repurpose, hooks, carousel-writer |
-| content-longform | sonnet | Books, ebooks, blogs, workbooks, brand PDFs | brand-voice-router, non-fiction-book-factory, ebook-factory, doc-coauthoring, ship-it-brand-pdf |
-| content-business | sonnet | Proposals, decks, sales emails (drafts only) | proposal-builder, product-packaging-pricing, sales-call-debrief, talk-track-generator, theme-factory |
-| content-qa | haiku | Content QA (read-only, checklist) | learned/qa-rules.md, scripts/qa/* |
-| market-researcher | sonnet | Sales/marketing/product research, fact verification | firecrawl, Apify, Notion research DB |
+**Roster (12 agents):**
+- **Pipeline owners (5):** builder, creator, strategist, researcher, operator
+- **Utility specialists (7):** product-lead, designer, debugger, security, reviewer, content-qa, memory-keeper
+
+**Deprecation aliases (Phase 8.x.4 — old names now resolve to the real agent via body injection):**
+- `engineer` → `builder`
+- `content-social` / `content-longform` / `content-business` → `creator`
+- `tech-researcher` / `market-researcher` → `researcher`
+- `project-manager` → `operator`
+
+These old names are NOT registered subagents, but the `inject-skills-for-agent.sh` hook intercepts them and injects the **full agent body** of the correct new agent via `updatedInput.prompt`. The dispatched general-purpose agent receives the complete role definition, JTBDs, skills, and notes — so it behaves as the target agent. Not as clean as a real frontmatter load (no tool/skill grants from frontmatter), but far better than running generic. Verified by probe: `engineer` reports builder's 9 JTBDs; `project-manager` reports operator's 6 slash commands. `updatedInput.subagent_type` was tested and crashes the harness — prompt injection is the only viable lever. Using the new name directly is still preferred (gets the real frontmatter-driven load).
+
+To add/modify an agent: edit `~/.claude/agent-skill-manifest.yaml`, run `python3 ~/.claude/scripts/render-manifest.py`, validate via `bash ~/.claude/scripts/validate-manifest.sh`. The pre-commit hook + Stop drift hook keep the generated files honest.
+
+See `~/.claude/docs/skill-directory.md` for JTBD → agent mapping and `~/.claude/docs/agent-skill-gap-analysis.md` for design rationale.
+
+Previous 14-agent roster archived at `~/.claude/agents-v1-archive.tar.gz` (Phase 8.x Task 9 complete).
 
 See `rules/common/agents.md` for slash commands and orchestration rules.
 
@@ -35,19 +36,17 @@ See `rules/common/agents.md` for slash commands and orchestration rules.
 
 **Phase gating:** Auto-proceed unless agent reports DONE_WITH_CONCERNS, NEEDS_CONTEXT, or BLOCKED.
 
-## CARL Rule System
+## CARL Rule System (Simplified 2026-05-26)
 
-CARL auto-injects domain rules via `carl-loader.sh` on every UserPromptSubmit.
-- **GLOBAL + CONTEXT** always on. **COMMANDS** via star-commands (`*dev`, `*review`, `*brief`).
-- **RIGOR** triggers on: settings.json, config, schema, manifest, hooks, tsconfig, CLAUDE.md, plugins, MCP.
-- Domains: GLOBAL, CONTEXT, WORKFLOW, RIGOR, COMMANDS, CONTENT-RULES, WRITING, N8N, **DESIGN** (auto-loads `learned/ai-design-tells` + brand rules on UI/design keywords like design/ui/mockup/hero/landing/component/tsx/branding), **SCOPE** (triggers on scope tokens like all/every/each + collection noun — fires restate-scope rule).
-- Use `carl-manager` skill to create/edit. Use `carl-help` for reference.
+CARL domain rules migrated to learned patterns. Only **star-commands** remain (`*dev`, `*review`, `*brief`, `*plan`, `*discuss`, `*debug`, `*explain`). The `carl-loader.sh` hook now only parses star-commands from the prompt — no domain keyword matching, no always-on rule injection.
+
+Previous 11 domains (130 rules) archived at `~/.carl/domains-archive-2026-05-26.tar.gz`. ~110 rules were redundant with existing learned patterns; ~25 unique rules migrated to 7 new learned patterns: `plan-artifact-discipline`, `plan-pipeline-gates`, `check-before-create`, `present-labeled-options`, `context-brackets`, `n8n-build-patterns`, `design-color-discipline`.
 
 ## Skill Collections
 
 Custom skills (in `~/.claude/skills/`):
-- **Learned patterns:** `learned/` — 16 cross-project pattern files synthesized from feedback (all carry v2 frontmatter)
-- **Brand voice:** `brand-voice-router/` — all 3 brands + you Direct, with plugin integration
+- **Learned patterns:** `learned/` — ~44 cross-project pattern files (5 blocking, rest warning). Frontmatter schema: `name`, `description`, `severity`, `archetypes`, `last-validated`. Loaded every session by `archetype-injector.sh` (blocking always-on, others filtered by project archetype).
+- **Brand voice:** `brand-voice-router/` — all 3 brands + you Direct, with plugin integration. Partial-read: `scripts/brand-voice-extract.sh <brand>` outputs preamble + one brand (saves 22-48% vs full file).
 - **Writing:** `humanize-ai-writing/`, `voice-extractor/`
 - **Thinking:** `mental-models/`, `devils-advocate/`, `decision-maker/`, `self-interview/`, `ask-me-the-questions/`
 - **Content:** `brainstorm/`, `code-documenter/`, `handoff/`
@@ -57,6 +56,10 @@ External (not auto-discovered):
 - Writing books: `~/github/claude-code-toolkit/skills/non-fiction-book-factory/`
 - Writing ebooks: `~/github/claude-code-toolkit/skills/ebook-factory/`
 - Writing craft: `~/github/claude-code-toolkit/skills/writing/`
+
+### Historical phases (7.x–8.x) — reference only
+
+The sections below document the evolution of skills, consolidation, bake-off, and /ship tooling. agent-eval (Phase 7.6) was **disabled 2026-05-26** (5 total evals, low signal; `AGENT_EVAL=off`). CARL domain injection (referenced in Phase 7.5) was **removed 2026-05-26** (migrated to learned patterns). The tooling itself (/skills, /consolidate-skills, /bake-off, /ship, /system-retro) is still functional.
 
 ### `/skills` semantic catalog (Phase 7.2, 2026-05-20; 7.2.2 patch 2026-05-21)
 
@@ -68,9 +71,9 @@ External (not auto-discovered):
 
 **Phase 7.2.3 (2026-05-21):** Two scoring-quality calibrations from `feedback_phase_7_2_2_residual_calibration_targets.md`. (1) `STOPWORDS` extended with five high-frequency low-signal generics from corpus analysis (`use`=52% of descriptions, `skill`=19% self-reference, `any`/`should`/`before` ~8% each). (2) Description-match stemming tightened from `\b<kw>` (unbounded prefix) to `\b<kw>(s|es|d|ed|ing)?\b` (controlled regular-suffix stems with trailing word boundary). Eliminates the false-positive class where `\bmake` matched `decision-maker` inside descriptions. Real writing skills (`copywriting`, `docs:write-concisely`) now surface in top 5-7 for humanize queries instead of being displaced by alphabetical noise. Test 10 covers both calibrations; full prefilter suite 10/10.
 
-**Phase 7.5 (2026-05-21):** Subagents now receive top-3 prefilter-matched skills at dispatch time via new `hooks/inject-skills-for-agent.sh` (PreToolUse:Agent). Allowlist: 7 implementation-style subagents (engineer, designer, debugger, content-social/longform/business, tech-researcher). Skills appear as a prepended context block in the subagent's prompt (via `hookSpecificOutput.updatedInput.prompt`). Prefilter is the same Phase 7.2 script; no scoring changes. Soft-fails open on every internal error — prefilter timeout, missing fields, <3 candidates → exit 0 (no injection, no block). Log: `~/.claude/logs/inject-skills-for-agent.log` (NDJSON, one line per fire/skip). Tests at `~/.claude/test/hooks/` (5 tests, 12 assertions). Kill: `SKILL_INJECT_FOR_AGENT=off`.
+**Phase 7.5 (2026-05-21) → SUPERSEDED by Phase 8.x.4 (2026-05-25).** Original: skill-injection prefilter for 7 allowlisted subagents. Phase 8.x.3 scoped the allowlist to deprecated aliases only (real manifest agents load natively). **Phase 8.x.4 replaced the entire skill-injection path** with full-agent-body injection: when a deprecated alias fires, the hook reads the target agent's `.md` body and injects it via `updatedInput.prompt`. No prefilter, no skill candidates — the dispatched agent receives the complete role definition. `updatedInput.subagent_type` was tested and crashes the harness (not a supported field). Commit `5fc6afd`. Log: `~/.claude/logs/inject-skills-for-agent.log`. Kill: `SKILL_INJECT_FOR_AGENT=off`.
 
-**Phase 7.5.1 (2026-05-21):** Wraps the Phase 7.5 injection block in stable HTML-comment markers (`<!-- phase-7-5-injected-skills v1 -->` ... `<!-- /phase-7-5-injected-skills -->`) so Phase 7.6 can detect "was this dispatch injected?" by sniffing `tool_input.prompt` directly instead of log-joining. Two-line patch to `inject-skills-for-agent.sh`; new regression test at `test/hooks/06-marker-emitted.sh`. Full Phase 7.5 hooks suite stays green (6 tests, 15 assertions).
+**Phase 7.5.1 (2026-05-21):** ~~Wraps the Phase 7.5 injection block in stable HTML-comment markers~~ — markers are no longer emitted (Phase 8.x.4 replaced the injection format). The Phase 7.6 agent-eval enqueue hook still checks for the old markers; it will fire only on sessions that still have the old-format dispatches in their context. No functional impact.
 
 **Phase 7.6 (2026-05-21):** Post-dispatch LLM-judge that grades whether implementation subagents used the skills Phase 7.5 surfaced. Two-part hook at `hooks/agent-eval.sh`: `--enqueue` (PostToolUse:Agent) snapshots (task + injected_skills + agent_return) to `~/.claude/data/agent-eval-queue/<ts>.json` when the Phase 7.5.1 marker block is present in the prompt; `--drain` (Stop hook, after `session-retrospective.sh`) invokes `claude -p --model claude-haiku-4-5-20251001` per queued snapshot, validates JSON via jq with retry-once-on-bad-JSON, appends judgments to `~/.claude/data/agent-eval.jsonl` (canonical, JSONL-compact via `jq -n -c`). Multi-field schema: `used_injected_skill`, `which_skill`, `better_skill_suggested`, `quality_score` (1-5), `rationale`. Hard rules in judge prompt forbid hallucinated skill names per `learned/never-fabricate`. Logging-only — no auto-action on judge output. Caps: 20 files / 300s per drain, 30s per eval. `timeout`/`gtimeout`/bare fallback in `run_judge` for macOS without coreutils. Soft-fails open everywhere; never blocks the user's session. Kill: `AGENT_EVAL=off` (full), `AGENT_EVAL_DRAIN=off` (collect snapshots without spending tokens). Tests at `~/.claude/test/agent-eval/` (9 tests, 38 assertions). Log: `~/.claude/logs/agent-eval.log` (NDJSON, one line per fire/skip/judge).
 
@@ -104,7 +107,7 @@ Per-session Haiku 4.5 judge (`claude --bare -p --output-format json`, 90s timeou
 
 **`--json-schema` calibration finding:** Haiku 4.5 with `--json-schema` flag returns empty `result` field on the 6-field schema (api still costs ~25s + ~2500 output tokens — model is reasoning through structured-output mode but never commits). Dropped the flag, replaced with strict system-prompt ("Your ENTIRE response must be a single JSON object... Start with '{' and end with '}'") + inline JSON template in user prompt + defensive `_extract_json_object()` brace-counter parser with retry-once. Reliably produces 20/20 verdicts in ~95s. Honest signal-limit per the Phase 7.7a/b pattern: `--json-schema` works for the 3-field schema in `/consolidate-skills` but fails at 6 fields with mixed types — calibration follow-up if richer constraints needed.
 
-**Slug-encoding finding:** Claude Code's transcript dir slugs map both `/` AND `.` to `-` (so `$HOME/github/<your-bot>` → `<your-workspace>-<your-bot>`). Reverse-parsing the slug is fundamentally lossy (`user.name` and `user-name` are indistinguishable post-encoding). Solved by forward-built index: walk likely cwd roots (`~`, `~/github`, `~/Desktop`, `~/Downloads`, `~/.claude`, `/private/tmp`, `/tmp`) two-deep, compute each real dir's slug, build `dict[slug, str(real_path)]`. Regression test at `test/system-retro/08-cwd-slug-roundtrip.sh`.
+**Slug-encoding finding:** Claude Code's transcript dir slugs map both `/` AND `.` to `-` (so `$HOME/github/nancy` → `<your-workspace>-nancy`). Reverse-parsing the slug is fundamentally lossy (`molly.shelestak` and `molly-shelestak` are indistinguishable post-encoding). Solved by forward-built index: walk likely cwd roots (`~`, `~/github`, `~/Desktop`, `~/Downloads`, `~/.claude`, `/private/tmp`, `/tmp`) two-deep, compute each real dir's slug, build `dict[slug, str(real_path)]`. Regression test at `test/system-retro/08-cwd-slug-roundtrip.sh`.
 
 **Dogfood 2026-05-23 (20 sessions, last ~12 hours):** Initial run (no aggregate floor): `raw` (n=16) shipped+smoked=2.2; `ship` (n=2) 4.0; `superpowers` (n=2) 4.0. Looked like ship + superpowers double raw on shipping.
 
@@ -135,6 +138,32 @@ Per-session Haiku 4.5 judge (`claude --bare -p --output-format json`, 90s timeou
 
 **Kill:** `SHIP_SCOPE=off` (classifier only, defaults to M). 5 unit tests at `~/.claude/test/ship-scope-classify/` covering kill switch, mocked-Haiku round-trip, soft-fail on bad output, invalid-scope rejection, empty-input fast path.
 
+### `classify-scope.sh` manifest-dispatch classifier (Phase 8.x.1, 2026-05-25)
+
+`~/.claude/scripts/classify-scope.sh --prompt "<text>" --jtbd-default <S|M|L|XL>` — deterministic scope classifier for the agent-skill manifest dispatch layer. Emits one of `S|M|L|XL` to stdout. Implements spec OQ7 "manifest wins on low confidence" precedence: a confident prompt-keyword hit (S signals like `typo`, `env var`, `rename …`, `dep bump`, one-liner; XL signals like `architectural`, `new service`, `rewrite`, `framework swap`) overrides the JTBD's declared `default_scope`; otherwise the declared default wins. No LLM call — pure regex on a lowercased copy of the prompt, keeps the dispatch path zero-cost and side-effect-free. Soft-fails to `--jtbd-default` on empty prompt. Kill switch: `CLASSIFY_SCOPE=off` → always echoes the declared default. Bad `--jtbd-default` value exits 2 (negative-test enforced).
+
+Turns Phase 8.x manifest-dispatch tests 05+06 GREEN (was 4/6, now 6/6). Smoke: downward override (`fix typo` + L → S), upward override (`add a new service` + S → XL), no-signal cases preserve declared default (`ship the analytics dashboard` + L → L), empty prompt returns default, kill switch returns default unchanged. Mirror of script lives in `~/github/claude-config/scripts/`.
+
+### `render-manifest.py` canonical output format (Phase 8.x.2, 2026-05-25)
+
+Fix for the Phase 8.x dogfood Scenario 4 finding (`feedback_phase_8x_agents_dir_not_enumerated.md`): pre-canonical `render-manifest.py` emitted nested `tools.built_in` + `skills.primary` blocks plus invented frontmatter fields (`kind`, `owns_jtbd`, `owns_slash_commands`, `can_invoke_specialists`) which Claude Code's subagent loader silently rejects. Result: all 12 user-level agents were unregistered. Dispatches to non-allowlisted names (`strategist`, `operator`) hard-failed with "Agent type not found"; dispatches to allowlisted names (`creator`, `researcher`, `builder`, `designer`, `debugger`) only "worked" because the Phase 7.5 PreToolUse hook back-doored them via `updatedInput.prompt` mutation — verified by a builder probe that returned `agent_name_in_system_prompt: Claude Code`, not `builder`.
+
+New output emits the canonical fields per https://code.claude.com/docs/en/sub-agents: `name`, `description`, `model`, `tools` (comma-separated string, built-in tools only), `skills` (block list of primary skills only). All other manifest metadata moves to the markdown body so the agent's system prompt still knows what it owns: `## Owns slash commands`, `## Owns JTBDs`, `## Chain skills (on-demand)`, `## MCP servers`, `## Can invoke specialists`, `## Notes`. No frontmatter field in the new output is outside the documented 15-field allowlist.
+
+Tests: all 3 suites GREEN (render-manifest 6/6, manifest 10/10, manifest-dispatch 6/6). validate-manifest.sh against real manifest: 13/13 OK. Goldens at `~/.claude/test/manifest/fixtures/golden/{builder,product-lead}.md` regenerated. Test 03 (`03-chain-skills-section.sh`) updated to grep for chain skills in the body (`## Chain skills` heading + `- humanize-ai-writing` bullet) instead of the old nested-YAML `^  chain:` block. Shipped as commit `7d1144b` in `~/github/claude-config/`.
+
+**Verify after restart:** dispatch `subagent_type=strategist` with a single-roundtrip probe asking the subagent to read its own system prompt. Success = `name: strategist` (manifest agent loaded). Failure = `Claude Code` (still unregistered, fix didn't land). Output-shape conformance is not verification — a capable general-purpose imitates any agent given a prescriptive prompt; the system prompt's own name is the signal.
+
+### `render-manifest.py` frontmatter-at-byte-0 fix (Phase 8.x.3, 2026-05-25)
+
+The 2026-05-25 restart probe ran and **failed differently than predicted**: `subagent_type=strategist` returned "Agent type 'strategist' not found" — all 12 manifest agents were absent from the dispatch roster entirely (not the predicted `name: Claude Code` back-door case). Root cause: Phase 8.x.2 fixed the frontmatter *fields* but `render_agent()` still emitted the `<!-- DO NOT EDIT -->` HEADER on **line 1, above the opening `---`**. Claude Code's subagent loader requires YAML frontmatter at **byte 0**; a leading HTML comment means no frontmatter is found and the agent is silently dropped. Decisive evidence: loading plugin agents (e.g. `everything-claude-code/agents/planner.md`) start with `---\n` at byte 0; ours started with `<!-- D`.
+
+Fix: `render_agent()` now builds `lines = ["---", ...]` and appends `HEADER` as the **first body line** (after the closing `---`). Files start with `---` at byte 0; the do-not-edit notice survives as an in-body HTML comment (invisible in rendered markdown). `validate-manifest.py` unaffected (whole-file `DRIFT_HEADER in content` substring, not line 1). Both `render-manifest.py` copies (`~/.claude/scripts/` + `~/github/claude-config/scripts/`) synced identical. Test 05 (`05-every-output-has-header.sh`) rewritten to assert line-1 == `---` plus HEADER-present-in-body. All 12 live agents regenerated + 2 goldens regenerated. Suites green (render-manifest 6/6, manifest 10/10, manifest-dispatch 6/6); validate-manifest.sh 13/13.
+
+**CONFIRMED 2026-05-25 via fresh-subprocess probe (no restart needed).** The interactive session's Agent roster is frozen at startup, but a fresh `claude -p` subprocess re-scans `~/.claude/agents/` live. Probe: `cd /tmp && claude -p "Call the Task tool once with subagent_type='__probe_nonexistent__' ... output the verbatim error" --allowedTools Task --output-format text` — the harness validates the bogus type and echoes the freshly-computed available-agents list (cheap; no real agent runs). Result: the list now includes all 12 manifest agents (builder, content-qa, creator, debugger, designer, memory-keeper, operator, product-lead, researcher, reviewer, security, **strategist**). This proves the harness DOES enumerate `~/.claude/agents/` — **revising** the prior `feedback_phase_8x_agents_dir_not_enumerated` conclusion (which mistook "all 12 files malformed" for "harness ignores the dir"). Agents are live for any newly-started session. **Reusable technique:** to verify `~/.claude/agents/` changes mid-session without restarting, run the fresh-subprocess bogus-dispatch probe above and grep the roster.
+
+**Byte-0 was necessary but NOT sufficient — a SECOND bug.** Body-content probes (role + owned-slash-commands, not name) revealed 5 of the 12 agents still ran generic: `builder`, `creator`, `designer`, `debugger`, `researcher`. Cause: the Phase 7.5 `inject-skills-for-agent.sh` hook allowlisted exactly those names and emitted `updatedInput.prompt` on their `PreToolUse:Agent` dispatch — which **hijacks** the dispatch into a generic run instead of loading the (now-working) agent body. The hook predates the byte-0 fix and is redundant now that agents declare `skills:` in frontmatter. Fix: scoped the hook's allowlist down to deprecated aliases only (`engineer|content-social|content-longform|content-business|tech-researcher`); the 5 manifest names dropped out and load natively. Verified: `builder` with the hook ON now reports `role: pipeline owner… / owns: /plan /build /ship /fix`. The other 7 agents (strategist, operator, product-lead, reviewer, security, content-qa, memory-keeper) were never allowlisted and always loaded correctly. Full proof chain: `feedback_phase_7_5_hook_hijacks_manifest_agents`. **Lesson:** probe dispatch by BODY-unique content via a fresh `claude -p`, never by self-reported name (base identity reads "Claude Code" regardless); and when you fix a root cause, audit the hooks that compensated for it.
+
 ### `/bake-off` tournament framework (Phase 7.3, 2026-05-20)
 
 `/bake-off [--yolo|--control] "query"` — tournament-tests N skills on the same task. Three modes:
@@ -149,29 +178,35 @@ Kill: `BAKEOFF=off`. 8 unit tests at `~/.claude/test/bake-off/` (34 assertions t
 
 **Phase 7.4 (2026-05-21):** Auto-elimination filter active across all 3 modes. Skills with `≥3 appearances AND 0 wins` are filtered out of `blind3` selection (both untried and tried tiers), `yolo1` random pick (with eliminated-aware fallback), and `control2` yolo half + known-good fallback. `appearances_of` extracted into `scripts/bake-off-lib.sh` shared with `skills-prefilter.sh`. Kill switch: `BAKEOFF_ELIMINATE=off`. New test `test/bake-off/08-eliminated-dropped.sh` validates end-to-end pipeline integration (3 assertions, blind3/yolo1/control2 deterministic). bake-off-prefilter's own filter is defense-in-depth (skills-prefilter drops eliminated skills first) — covered by code review + lib unit tests rather than per-mode stochastic integration tests (which would add 10+ minutes to the suite due to skills-prefilter I/O cost).
 
-## Hooks (enforced automatically)
+## Hooks (enforced automatically — simplified 2026-05-26)
 
 | Hook | Event | What it does |
 |------|-------|-------------|
-| session-retrospective.sh | Stop | **8-check DoD enforcement** — blocks exit if incomplete. Check 8 (NEW 2026-05-20): synthesis cadence — blocks when ≥10 new feedback files since newest `learned/*.md` OR ≥7 days. Kill (whole hook): `RETROSPECTIVE_GATE=off`. Kill (CHECK 8 only): `SYNTHESIS_GATE=off` |
-| carl-loader.sh | UserPromptSubmit | Injects CARL domain rules |
-| observe-learning.sh | Pre/PostToolUse | Logs activity, increments counter, rotates at 5MB |
-| synthesize-learnings.sh | SessionStart | Flags unprocessed feedback for learned/ synthesis |
-| check-model-freshness.sh | SessionStart | Warns if model refs >90 days stale |
-| surface-hook-blocks.sh | SessionStart | NEW 2026-05-20 — reads `~/.claude/logs/hook-blocks.log`, emits systemMessage if any blocks in last 24h. Kill: `SURFACE_HOOK_BLOCKS=off` |
-| content-qa-guarded.sh | PostToolUse:Write\|Edit | PM jargon, tool mentions, 47, handle (content files only) |
-| agent-batch-validator.sh | PreToolUse:Agent | Enforces ≤6 operational file path refs AND scope-fidelity (restate full scope when user prompt has scope tokens). Kill (file-count check): `BATCH_GATE=off`. Kill (scope-fidelity check): `SCOPE_GATE=off` |
-| inject-skills-for-agent.sh | PreToolUse:Agent | NEW 2026-05-21 — runs `scripts/skills-prefilter.sh` on dispatch description, injects top-3 candidate skills into prompt via `hookSpecificOutput.updatedInput.prompt` for 7 implementation subagents (engineer, designer, debugger, content-social/longform/business, tech-researcher). Phase 7.5.1 (2026-05-21) wrapped block in `<!-- phase-7-5-injected-skills v1 -->` markers for Phase 7.6 detection. Soft-fails open. Log: `~/.claude/logs/inject-skills-for-agent.log`. Kill: `SKILL_INJECT_FOR_AGENT=off` |
-| agent-eval.sh --enqueue | PostToolUse:Agent | NEW 2026-05-21 — Phase 7.6 enqueue mode. When Phase 7.5.1 marker present in `tool_input.prompt`, atomically snapshots (task + injected_skills + agent_return) to `~/.claude/data/agent-eval-queue/<ts>-<uuid>.json` for the LLM-judge drain. Soft-fails open on every error path. Log: `~/.claude/logs/agent-eval.log`. Kill: `AGENT_EVAL=off` |
-| agent-eval.sh --drain | Stop (after session-retrospective.sh) | NEW 2026-05-21 — Phase 7.6 drain mode. Processes queue via `claude -p --model claude-haiku-4-5-20251001`, jq-validates response with retry-once-on-bad-JSON, appends judgments to `~/.claude/data/agent-eval.jsonl`. Caps: 20 files / 300s per drain, 30s per eval. `timeout`/`gtimeout`/bare fallback for macOS. Kill: `AGENT_EVAL_DRAIN=off` (collect snapshots without spending tokens) or `AGENT_EVAL=off` (full) |
-| workflow-gate.sh | PreToolUse:Agent | Gates product-lead-no-brainstorm + engineer-no-tests dispatches. Default-allow + positive-evidence-to-block (uses `subagent_type` or anchored description). Kill: `WORKFLOW_GATE=off` |
-| block-dangerous.sh | PreToolUse:Bash | Blocks `rm -rf /`, force-push to main, etc. Kill: `DANGEROUS_GATE=off` |
-| block-issue-close-without-tests.sh | PreToolUse:Bash | Blocks `gh issue close` without test/verified evidence. Kill: `ISSUE_CLOSE_GATE=off` |
-| caption-guard.sh | PreToolUse:Bash | Blocks freehand SQL caption writes that bypass caption-generator prompt. Kill: `CAPTION_GATE=off` |
-| caption-pipeline-guard.sh | PreToolUse:Write\|Edit | Blocks writes to `unstuck/captions/**` without first reading caption-generator.md. Kill: `CAPTION_PIPE_GATE=off` |
-| pre-commit-checks.sh | PreToolUse:Bash | Pre-commit lint + missing-tests + remote-ahead check on `git commit`. Kill: `PRECOMMIT_GATE=off` |
-| ship-phase-gate.sh | PostToolUse:Agent\|Bash | Gates /ship Stage 9 (Deploy + Smoke). 3-deploy rule, observability check, smoke check. Activates only when `.ship/<run>/patterns.md` is present. Kill: `SHIP_PHASE_GATE=off` |
-| archetype-injector.sh | UserPromptSubmit | reads cwd + prompt, resolves archetype from projects.yaml, emits (1) relevant learned/ pattern names, (2) Phase 7.1.5 detected work-type chain (build/plan/review/debug/research/write-content/memory/design/infra — first-match regex on prompt, ordered chain from `~/.claude/work-type-chains.yaml`), (3) Phase 7.1 archetype-relevant skill names from `~/.claude/skill-archetypes.yaml`, all with 60-char taglines. Caches per-cwd (work-type bypasses cache, runs every turn). Kill (whole hook): `ARCHETYPE_GATE=off`. Kill (skill block only): `SKILL_INJECTION=off`. Kill (work-type block only): `WORKTYPE_GATE=off` |
+| carl-loader.sh | UserPromptSubmit | Star-commands only (*dev, *review, etc.). Domain rules removed. |
+| archetype-injector.sh | UserPromptSubmit | Resolves archetype from projects.yaml, injects relevant learned patterns (blocking + archetype-filtered). No skill/work-type injection. Kill: `ARCHETYPE_GATE=off` |
+| mid-session-dod-nudge.sh | UserPromptSubmit | Soft nudge if >100 tool calls + stale HANDOFF.md. Once per day. Kill: `MID_SESSION_NUDGE=off` |
+| observe-learning.sh | PostToolUse | Increments tool counter only (no JSONL logging). Feeds mid-session nudge. |
+| block-dangerous.sh | PreToolUse:Bash | Blocks `rm -rf /`, force-push to main, curl\|sh. Kill: `DANGEROUS_GATE=off` |
+| pre-commit-checks.sh | PreToolUse:Bash | Pre-commit lint + missing-tests + remote-ahead. Kill: `PRECOMMIT_GATE=off` |
+| pre-commit-validate-manifest.sh | PreToolUse:Bash | Agent manifest validation on staged manifest/agent commits. Kill: `MANIFEST_GATE=off` |
+| block-issue-close-without-tests.sh | PreToolUse:Bash | Blocks `gh issue close` without test evidence. Kill: `ISSUE_CLOSE_GATE=off` |
+| caption-guard-unified.sh | PreToolUse:Bash+Write\|Edit | Blocks freehand SQL caption writes AND caption file edits without prompt read. Kill: `CAPTION_GATE=off` |
+| workflow-gate.sh | PreToolUse:Agent | Gates product-lead-no-brainstorm + engineer-no-tests. Kill: `WORKFLOW_GATE=off` |
+| agent-batch-validator.sh | PreToolUse:Agent | Enforces ≤6 file refs + scope-fidelity. Kill: `BATCH_GATE=off` / `SCOPE_GATE=off` |
+| inject-skills-for-agent.sh | PreToolUse:Agent | Deprecated alias → agent body injection. Real manifest agents untouched. Kill: `SKILL_INJECT_FOR_AGENT=off` |
+| content-qa-guarded.sh | PostToolUse:Write\|Edit | PM jargon, tool mentions, 47, handle check on content files. |
+| prettier-format.sh | PostToolUse:Write\|Edit | Auto-format on write. |
+| ship-phase-gate.sh | PostToolUse:Agent\|Bash | 3-deploy rule, observability, smoke check. Only when /ship active. Kill: `SHIP_PHASE_GATE=off` |
+| session-end-save.sh | Stop | Backs up HANDOFF.md + TASKS.md (rate-limited 10min/project, 3-day retention). |
+| session-retrospective.sh | Stop | DoD enforcement with grace: 1st miss = soft nudge, 2+ consecutive = hard block. Checks HANDOFF.md + TASKS.md freshness only (8 checks trimmed to 2). Kill: `RETROSPECTIVE_GATE=off` |
+| stop-check-manifest-drift.sh | Stop | Logs agent manifest drift. Never blocks. Kill: `MANIFEST_DRIFT_CHECK=off` |
+| mempalace-wrapper.sh | SessionStart+Stop+Compact | MemPalace session save, auto-mine, wake-up injection. 10s timeout. |
+| synthesize-learnings.sh | SessionStart | Flags unprocessed feedback for learned/ synthesis. |
+| teammate-idle-gate.sh | TeammateIdle | Blocks if teammate says work is unfinished. Kill: `TEAMMATE_IDLE_GATE=off` |
+| task-complete-gate.sh | TaskCompleted | Blocks literal "Run X" commands without execution evidence. Kill: `TASK_COMPLETE_GATE=off` |
+| auto-approve.sh | PermissionRequest | Auto-allows reads, blocks git push + deploys + external writes. |
+
+Full kill switch reference: `~/.claude/hooks/KILL_SWITCHES.md`
 
 All PreToolUse + Stop hooks call `~/.claude/hooks/lib/log-block.sh` `log_block()` before blocking — appends NDJSON entry to `~/.claude/logs/hook-blocks.log` for cross-session triage via `surface-hook-blocks.sh`.
 
@@ -203,13 +238,11 @@ Persistent at `~/.claude/projects/<your-workspace>/memory/`:
 
 ## Layered Memory (Phase 5.1 complete 2026-05-19 — 3 new project wings + canonical rooms across 17 yamls; auto-mine LIVE on Stop+PreCompact)
 
-Memory lives in three layers — each loaded a different way, each holds a different shape of knowledge. **As of Phase 4, per-project memory dirs are WRITE-ONLY** (capture target; auto-mined to MemPalace; never read directly). **As of Phase 5, the palace has a canonical 22-wing taxonomy** (14 project + 7 infrastructure + 1 sessions). 17 `mempalace.yaml` files use a canonical 5-room template (`general`/`decisions`/`problems`/`planning`/`technical`). Idempotency caveat: existing drawers stay in their original rooms; new captures route to canonical rooms.
-
-> The private config uses [MemPalace](https://github.com/molly-diversifiedfun/mempalace) for the long-tail memory layer. This public snapshot describes the integration shape (write-only project dirs, auto-mine on Stop hook, MCP-only read path) so you can wire your own equivalent. The `mempalace-wrapper.sh` hook soft-fails open if mempalace is missing — so this snapshot installs cleanly without it.
+Memory lives in three layers — each loaded a different way, each holds a different shape of knowledge. **As of Phase 4, per-project memory dirs are WRITE-ONLY** (capture target; auto-mined to MemPalace; never read directly). **As of Phase 5, the palace has a canonical 22-wing taxonomy** (14 project + 7 infrastructure + 1 sessions) — see `~/github/docs/mempalace-wings.md` for the source of truth. **As of Phase 5.1, wing count = 30** (Phase 5 baseline 26 + 3 new project wings: `mollyshelestak`, `giftshopper`, `joelaumakua` from Item 2 + 1 R7-recreated `wing_github`); 17 mempalace.yaml files now use the canonical 5-room template (`general`/`decisions`/`problems`/`planning`/`technical`). Idempotency caveat: existing drawers stay in their original rooms; new captures route to canonical rooms. **Phase 5.2 (deferred):** `tmp` wing cleanup + PostHog credential rotation + `/tmp/posthog-auth.json` scrub — still pending, leak window open.
 
 | Layer | Location | When loaded | What lives there |
 |---|---|---|---|
-| **Always-on** | `~/.claude/skills/learned/` + this CLAUDE.md + CARL rules | System prompt — every turn | 22 distilled cross-project patterns (blocking corrections); base instructions; CARL domains |
+| **Always-on** | `~/.claude/skills/learned/` + this CLAUDE.md | System prompt — every turn | ~44 learned patterns (5 blocking, rest archetype-filtered warnings); base instructions |
 | **Passive recall** | `~/.mempalace/identity.txt` + L1 wake-up | SessionStart hook injects ~800 tokens once per session | your identity profile; top-priority recent/relevant drawers — "the gist" |
 | **Retrieval on demand** | MemPalace palace via `mcp__mempalace__*` MCP tools | Queried when relevant | All 95k+ drawers (memory files, session transcripts, project content) — searchable by semantic + keyword + wing/room filters. **SOLE READ PATH for long-tail context.** Agents/commands wired with pre-flight (Phases 2 + 3). Per-project memory dirs (`~/.claude/projects/*/memory/`) are WRITE targets only — never read directly. |
 
@@ -243,9 +276,23 @@ Hook wrapper at `~/.claude/hooks/mempalace-wrapper.sh` soft-fails open (exit 0 +
 
 If MemPalace is unhealthy and the long-tail layer is unreadable, agents raise BLOCKED rather than falling back to file Glob (which would reintroduce stale on-disk content as authoritative).
 
-# Your Preferences (customize this section)
+# your Global Preferences
 
-The original private config carried personal preferences for communication style, writing voice, language choices, and tech-stack defaults. They were stripped from this public snapshot — replace with your own. Below are the **non-personal** discipline rules that the rest of this config depends on. Keep these or they'll silently misfire.
+## Communication
+- Be direct. Skip preamble.
+- Show code/output first, explain if asked.
+- Never say "I'd be happy to" or "Great question."
+- Use technical terminology — I'm a senior PM with 20+ years in tech.
+
+## Writing
+- Never sound like AI wrote it. No corporate filler.
+- Content pipeline: brand-voice-router → humanize-ai-writing → content-platform-adapter.
+- See `rules/` for coding style, patterns, and conventions.
+
+## Code
+- TypeScript strict, functional patterns, composition over inheritance.
+- Python for scripting. ReportLab for branded PDFs.
+- Test-first when scope is clear.
 
 ## Context Management — CRITICAL
 - At **70% context**, STOP and do IN ORDER:
@@ -262,6 +309,12 @@ The original private config carried personal preferences for communication style
 - Before editing CLAUDE.md, read it first. Never blindly append.
 
 ## Progress Tracking
-- DoD enforced by session-retrospective.sh (8 checks including synthesis cadence, blocks session end).
-- See `rules/common/definition-of-done.md` for full checklist + doc mapping.
+- DoD in `rules/common/definition-of-done.md` — full checklist + doc mapping.
+- `session-retrospective.sh` — **re-enabled with grace mechanism** (2026-05-26): 1st miss = soft nudge, 2+ consecutive misses = hard block. Only checks HANDOFF.md + TASKS.md freshness (trimmed from 8 checks to 2). Mid-session nudge (`mid-session-dod-nudge.sh`) provides early soft reminders.
+- "Major milestone" = committed feature, architectural decision, or resolved bug a future session needs.
+
+## Config files — what's live vs inert
+- `work-type-chains.yaml` — **inert at runtime** since 2026-05-26 (archetype-injector no longer reads it). Still valid config, consumed only by `validate-work-type-chains.sh`. Could be re-activated at agent dispatch time if needed.
+- `skill-archetypes.yaml` — **live**, consumed by `/skills` command prefilter (`scripts/skills-prefilter.sh`). Maps skill names to archetypes for Pool 1 filtering.
+- `projects.yaml` — **live**, consumed by archetype-injector for cwd → archetype resolution.
 - "Major milestone" = committed feature, architectural decision, or resolved bug a future session needs.
